@@ -45,7 +45,7 @@ BloomGame.NarrativeData = {
             { speaker: null, text: "Bloom's Taxonomy Level: Comprehension -- grasping meaning, not just facts." },
             { speaker: "Mr. Carbis", text: "A student asked me 'but WHY does that matter?' yesterday. And I froze." },
             { speaker: "Mr. Carbis", text: "They can parrot facts back, but I can see it in their eyes -- the understanding isn't there." },
-            { speaker: null, text: "New technique: Hold SPACE near groups to EXPLAIN concepts (area effect)." },
+            { speaker: null, text: "New technique: Press E to THINK ALOUD -- model your thinking to nearby students." },
             { speaker: null, text: "Some students are more easily distracted than others. Watch for the warning signs." },
         ]
     },
@@ -68,8 +68,8 @@ BloomGame.NarrativeData = {
             { speaker: null, text: "Bloom's Taxonomy Level: Application -- using knowledge in new situations." },
             { speaker: "Mr. Carbis", text: "I gave them a problem to solve yesterday. Open-ended. No right answer." },
             { speaker: "Mr. Carbis", text: "Half of them stared at blank pages. They understood the concepts but couldn't USE them." },
-            { speaker: null, text: "New technique: Press E near students to assign them to TASK STATIONS." },
-            { speaker: null, text: "Students at stations gain attention slowly on their own. Guide them to apply what they know!" },
+            { speaker: null, text: "New technique: Press Q near students to send them to LEARNING STATIONS." },
+            { speaker: null, text: "Students at stations restore attention on their own. Guide them to apply what they know!" },
         ]
     },
 
@@ -91,40 +91,15 @@ BloomGame.NarrativeData = {
             { speaker: null, text: "Bloom's Taxonomy Level: Analysis -- breaking apart ideas to understand their structure." },
             { speaker: null, text: "Wednesday. Week six. Mr. Carbis sits in the staff room, staring at his coffee." },
             { speaker: "Mr. Carbis", text: "A student told me my class was 'boring' today. Right to my face." },
-            { speaker: "Mr. Carbis", text: "Am I even reaching them? Maybe I'm not cut out for this." },
-            { speaker: null, text: "Students now INFLUENCE each other. Connected pairs share attention -- for better or worse." },
-            { speaker: null, text: "Press E near linked students to spark COMPARE & CONTRAST discussions." },
-            { speaker: null, text: "Turn negative peer influence into positive collaboration!" },
+            { speaker: "Mrs. Okafor", text: "Stop trying to control their attention. Start giving them reasons to care." },
+            { speaker: "Mr. Carbis", text: "What if I asked questions instead of giving answers?" },
+            { speaker: null, text: "Students now raise QUESTION BUBBLES. They disappear quickly -- get to them fast!" },
+            { speaker: null, text: "Walk near a questioning student and press SPACE. Recall Prompt becomes SOCRATIC DIALOG -- a huge attention boost for the student and their neighbours." },
+            { speaker: null, text: "Press Q to start GROUP WORK -- gathering students at a desk to collaborate." },
         ]
     },
 
     level4_outro: {
-        background: 0x264653,
-        lines: [
-            { speaker: null, text: "After class, the mentor teacher, Mrs. Okafor, stops by." },
-            { speaker: "Mrs. Okafor", text: "I watched your lesson through the window. You look exhausted." },
-            { speaker: "Mr. Carbis", text: "I feel like I'm performing. Dancing on a stage trying to hold their attention." },
-            { speaker: "Mrs. Okafor", text: "Stop trying to control their attention. Start giving them reasons to care." },
-            { speaker: "Mrs. Okafor", text: "You can't pour knowledge into them. You have to light the fire." },
-            { speaker: null, text: "He sits with those words for a long time after she leaves." },
-        ]
-    },
-
-    level5_intro: {
-        background: 0x264653,
-        lines: [
-            { speaker: null, text: "LEVEL 5: ANALYZE (Advanced)" },
-            { speaker: null, text: "Deeper analysis -- questioning assumptions, examining evidence." },
-            { speaker: "Mr. Carbis", text: "Mrs. Okafor was right. I've been the sage on the stage. Time to try something different." },
-            { speaker: "Mr. Carbis", text: "What if I asked questions instead of giving answers?" },
-            { speaker: null, text: "Students now raise QUESTION BUBBLES. They disappear quickly -- get to them fast!" },
-            { speaker: null, text: "Walk near a questioning student and press SPACE. Recall Prompt becomes SOCRATIC DIALOG -- a huge attention boost for the student and their neighbours." },
-            { speaker: null, text: "Press Q to start GROUP WORK -- gathering six students at a desk to collaborate." },
-            { speaker: null, text: "Risk and reward. Just like real teaching." },
-        ]
-    },
-
-    level5_outro: {
         background: 0x264653,
         lines: [
             { speaker: null, text: "Something shifts in the air." },
@@ -136,44 +111,20 @@ BloomGame.NarrativeData = {
         ]
     },
 
-    level6_intro: {
+    level5_intro: {
         background: 0x264653,
         lines: [
-            { speaker: null, text: "LEVEL 6: SYNTHESIZE" },
+            { speaker: null, text: "LEVEL 5: SYNTHESIZE" },
             { speaker: null, text: "Bloom's Taxonomy Level: Synthesis -- combining ideas to create something new." },
-            { speaker: "Mr. Carbis", text: "I stopped seeing myself as the source of knowledge today." },
+            { speaker: "Mr. Carbis", text: "The classroom has its own energy now. They're building things I never imagined." },
             { speaker: "Mr. Carbis", text: "I'm not the fountain. I'm the architect. I design the experience." },
             { speaker: null, text: "A PROJECT BOARD appears at the front of the room." },
-            { speaker: null, text: "Press E to send students to contribute. When 3+ students collaborate, a SYNTHESIS EVENT triggers!" },
+            { speaker: null, text: "Students now INFLUENCE each other through links. Use all your techniques!" },
             { speaker: null, text: "Guide them to create something greater than the sum of its parts." },
         ]
     },
 
-    level6_outro: {
-        background: 0x264653,
-        lines: [
-            { speaker: null, text: "The project board is covered in ideas, connections, and colorful diagrams." },
-            { speaker: null, text: "Students are talking over each other -- not in chaos, but in excitement." },
-            { speaker: "Student", text: "Mr. Carbis, look! We connected YOUR example to the real world!" },
-            { speaker: "Mr. Carbis", text: "You did that. Not me. You." },
-            { speaker: null, text: "He leans against his desk and watches them build something he never planned." },
-            { speaker: "Mr. Carbis", text: "The best moments in teaching are when you become unnecessary." },
-        ]
-    },
-
-    level7_intro: {
-        background: 0x264653,
-        lines: [
-            { speaker: null, text: "LEVEL 7: SYNTHESIZE (Advanced)" },
-            { speaker: null, text: "Creative synthesis -- matching ideas to their best expression." },
-            { speaker: "Mr. Carbis", text: "The classroom has its own energy now. They're building things I never imagined." },
-            { speaker: null, text: "The project board now has 3 COLOR-CODED ZONES. Students have color affinities." },
-            { speaker: null, text: "Press 1, 2, or 3 to direct students to matching zones for bonus effectiveness!" },
-            { speaker: null, text: "Perfect matches amplify the learning. Guide their creativity!" },
-        ]
-    },
-
-    level7_outro: {
+    level5_outro: {
         background: 0x264653,
         lines: [
             { speaker: null, text: "Mr. Carbis looks at the clock. An hour has passed without anyone noticing." },
@@ -184,10 +135,10 @@ BloomGame.NarrativeData = {
         ]
     },
 
-    level8_intro: {
+    level6_intro: {
         background: 0x264653,
         lines: [
-            { speaker: null, text: "LEVEL 8: EVALUATE" },
+            { speaker: null, text: "LEVEL 6: EVALUATE" },
             { speaker: null, text: "Bloom's Taxonomy Level: Evaluation -- the highest order of thinking." },
             { speaker: null, text: "Last day of term. Mr. Carbis stands at the door as students file in." },
             { speaker: "Mr. Carbis", text: "Today, I want you to teach each other what you've learned." },

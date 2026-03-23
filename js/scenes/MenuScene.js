@@ -31,15 +31,8 @@ BloomGame.MenuScene = class MenuScene extends Phaser.Scene {
         // Taxonomy display
         const levels = ['Remember', 'Understand', 'Apply', 'Analyze', 'Synthesize', 'Evaluate'];
         const colors = ['#2A9D8F', '#27AE60', '#E9C46A', '#E76F51', '#9B59B6', '#E63946'];
-        // Map taxonomy tiers to level indices (some tiers have 2 levels)
-        const tierToLevels = [
-            [0],       // Remember -> Level 1
-            [1],       // Understand -> Level 2
-            [2],       // Apply -> Level 3
-            [3, 4],    // Analyze -> Levels 4-5
-            [5, 6],    // Synthesize -> Levels 6-7
-            [7],       // Evaluate -> Level 8
-        ];
+        // Map taxonomy tiers to level indices (1:1)
+        const tierToLevels = [0, 1, 2, 3, 4, 5];
         const startY = 240;
         this.levelButtons = [];
         levels.forEach((level, i) => {
@@ -75,51 +68,18 @@ BloomGame.MenuScene = class MenuScene extends Phaser.Scene {
                 gfx.lineStyle(1, color, 0.6);
                 gfx.strokeRoundedRect(W / 2 - barWidth / 2, startY + i * 28, barWidth, 22, 4);
             });
-            let tierSubIndex = 0;
-            let tierClickTimer = null;
             zone.on('pointerdown', () => {
                 if (!this.cheatActive) return;
-                const tierLevels = tierToLevels[i];
-
-                if (tierLevels.length === 1) {
-                    // Single level tier — launch immediately
-                    const levelIndex = tierLevels[0];
-                    const cfg = BloomGame.LevelConfig[levelIndex];
-                    this.cameras.main.fadeOut(500, 0, 0, 0);
-                    this.time.delayedCall(500, () => {
-                        this.scene.start('Narrative', {
-                            key: cfg.introKey,
-                            nextScene: 'Classroom',
-                            nextData: { level: levelIndex },
-                        });
+                const levelIndex = tierToLevels[i];
+                const cfg = BloomGame.LevelConfig[levelIndex];
+                this.cameras.main.fadeOut(500, 0, 0, 0);
+                this.time.delayedCall(500, () => {
+                    this.scene.start('Narrative', {
+                        key: cfg.introKey,
+                        nextScene: 'Classroom',
+                        nextData: { level: levelIndex },
                     });
-                } else {
-                    // Multi-level tier — first click selects sub-level, second click launches
-                    if (tierClickTimer) {
-                        // Second click within window — launch the selected level
-                        tierClickTimer.destroy();
-                        tierClickTimer = null;
-                        const levelIndex = tierLevels[tierSubIndex];
-                        const cfg = BloomGame.LevelConfig[levelIndex];
-                        this.cameras.main.fadeOut(500, 0, 0, 0);
-                        this.time.delayedCall(500, () => {
-                            this.scene.start('Narrative', {
-                                key: cfg.introKey,
-                                nextScene: 'Classroom',
-                                nextData: { level: levelIndex },
-                            });
-                        });
-                    } else {
-                        // First click — show which sub-level, wait for confirm
-                        text.setText(`${level} ${tierSubIndex + 1}/${tierLevels.length} (click again)`);
-                        tierClickTimer = this.time.delayedCall(2000, () => {
-                            // Timeout — cycle to next sub-level
-                            tierSubIndex = (tierSubIndex + 1) % tierLevels.length;
-                            text.setText(level);
-                            tierClickTimer = null;
-                        });
-                    }
-                }
+                });
             });
 
             this.levelButtons.push({ zone, gfx, text, color, barWidth, tierIndex: i });

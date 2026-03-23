@@ -4,6 +4,7 @@ BLOOM'S CLASSROOM — ALL DIALOGS
 Edit the text below and send it back.
 Keep the format exactly as-is: headers in [brackets], speaker names followed by colon.
 Lines starting with NARRATOR: have no speaker shown.
+Lines with (classroom) show the classroom backdrop behind the dialog.
 ==========================================
 
 
@@ -40,7 +41,7 @@ NARRATOR: LEVEL 2: UNDERSTAND
 NARRATOR: Bloom's Taxonomy Level: Comprehension -- grasping meaning, not just facts.
 Mr. Carbis: A student asked me 'but WHY does that matter?' yesterday. And I froze.
 Mr. Carbis: They can parrot facts back, but I can see it in their eyes -- the understanding isn't there.
-NARRATOR: New technique: Hold SPACE near groups to EXPLAIN concepts (area effect).
+NARRATOR: New technique: Press E to THINK ALOUD -- model your thinking to nearby students.
 NARRATOR: Some students are more easily distracted than others. Watch for the warning signs.
 
 
@@ -57,8 +58,8 @@ NARRATOR: LEVEL 3: APPLY
 NARRATOR: Bloom's Taxonomy Level: Application -- using knowledge in new situations.
 Mr. Carbis: I gave them a problem to solve yesterday. Open-ended. No right answer.
 Mr. Carbis: Half of them stared at blank pages. They understood the concepts but couldn't USE them.
-NARRATOR: New technique: Press E near students to assign them to TASK STATIONS.
-NARRATOR: Students at stations gain attention slowly on their own. Guide them to apply what they know!
+NARRATOR: New technique: Press Q near students to send them to LEARNING STATIONS.
+NARRATOR: Students at stations restore attention on their own. Guide them to apply what they know!
 
 
 [LEVEL 3 OUTRO]
@@ -74,33 +75,14 @@ NARRATOR: LEVEL 4: ANALYZE
 NARRATOR: Bloom's Taxonomy Level: Analysis -- breaking apart ideas to understand their structure.
 NARRATOR: Wednesday. Week six. Mr. Carbis sits in the staff room, staring at his coffee.
 Mr. Carbis: A student told me my class was 'boring' today. Right to my face.
-Mr. Carbis: Am I even reaching them? Maybe I'm not cut out for this.
-NARRATOR: Students now INFLUENCE each other. Connected pairs share attention -- for better or worse.
-NARRATOR: Press E near linked students to spark COMPARE & CONTRAST discussions.
-NARRATOR: Turn negative peer influence into positive collaboration!
-
-
-[LEVEL 4 OUTRO]
-NARRATOR: After class, the mentor teacher, Mrs. Okafor, stops by.
-Mrs. Okafor: I watched your lesson through the window. You look exhausted.
-Mr. Carbis: I feel like I'm performing. Dancing on a stage trying to hold their attention.
 Mrs. Okafor: Stop trying to control their attention. Start giving them reasons to care.
-Mrs. Okafor: You can't pour knowledge into them. You have to light the fire.
-NARRATOR: He sits with those words for a long time after she leaves.
-
-
-[LEVEL 5 INTRO — ANALYZE (ADVANCED)]
-NARRATOR: LEVEL 5: ANALYZE (Advanced)
-NARRATOR: Deeper analysis -- questioning assumptions, examining evidence.
-Mr. Carbis: Mrs. Okafor was right. I've been the sage on the stage. Time to try something different.
 Mr. Carbis: What if I asked questions instead of giving answers?
 NARRATOR: Students now raise QUESTION BUBBLES. They disappear quickly -- get to them fast!
 NARRATOR: Walk near a questioning student and press SPACE. Recall Prompt becomes SOCRATIC DIALOG -- a huge attention boost for the student and their neighbours.
-NARRATOR: Press Q to start GROUP WORK -- gathering six students at a desk to collaborate.
-NARRATOR: Risk and reward. Just like real teaching.
+NARRATOR: Press Q to start GROUP WORK -- gathering students at a desk to collaborate.
 
 
-[LEVEL 5 OUTRO]
+[LEVEL 4 OUTRO]
 NARRATOR: Something shifts in the air.
 Student: Wait -- so you're saying there ISN'T one right answer?
 Mr. Carbis: I'm saying the question matters more than the answer.
@@ -109,35 +91,17 @@ NARRATOR: Not compliance. Not performance. Curiosity.
 Mr. Carbis: Maybe this is what it's supposed to feel like.
 
 
-[LEVEL 6 INTRO — SYNTHESIZE]
-NARRATOR: LEVEL 6: SYNTHESIZE
+[LEVEL 5 INTRO — SYNTHESIZE]
+NARRATOR: LEVEL 5: SYNTHESIZE
 NARRATOR: Bloom's Taxonomy Level: Synthesis -- combining ideas to create something new.
-Mr. Carbis: I stopped seeing myself as the source of knowledge today.
+Mr. Carbis: The classroom has its own energy now. They're building things I never imagined.
 Mr. Carbis: I'm not the fountain. I'm the architect. I design the experience.
 NARRATOR: A PROJECT BOARD appears at the front of the room.
-NARRATOR: Press E to send students to contribute. When 3+ students collaborate, a SYNTHESIS EVENT triggers!
+NARRATOR: Students now INFLUENCE each other through links. Use all your techniques!
 NARRATOR: Guide them to create something greater than the sum of its parts.
 
 
-[LEVEL 6 OUTRO]
-NARRATOR: The project board is covered in ideas, connections, and colorful diagrams.
-NARRATOR: Students are talking over each other -- not in chaos, but in excitement.
-Student: Mr. Carbis, look! We connected YOUR example to the real world!
-Mr. Carbis: You did that. Not me. You.
-NARRATOR: He leans against his desk and watches them build something he never planned.
-Mr. Carbis: The best moments in teaching are when you become unnecessary.
-
-
-[LEVEL 7 INTRO — SYNTHESIZE (ADVANCED)]
-NARRATOR: LEVEL 7: SYNTHESIZE (Advanced)
-NARRATOR: Creative synthesis -- matching ideas to their best expression.
-Mr. Carbis: The classroom has its own energy now. They're building things I never imagined.
-NARRATOR: The project board now has 3 COLOR-CODED ZONES. Students have color affinities.
-NARRATOR: Press 1, 2, or 3 to direct students to matching zones for bonus effectiveness!
-NARRATOR: Perfect matches amplify the learning. Guide their creativity!
-
-
-[LEVEL 7 OUTRO]
+[LEVEL 5 OUTRO]
 NARRATOR: Mr. Carbis looks at the clock. An hour has passed without anyone noticing.
 Mr. Carbis: I barely spoke today. And it was my best lesson yet.
 NARRATOR: He thinks about Mrs. Okafor's words. Light the fire.
@@ -145,8 +109,8 @@ Mr. Carbis: The fire is lit. Now comes the hardest part.
 Mr. Carbis: Letting go.
 
 
-[LEVEL 8 INTRO — EVALUATE]
-NARRATOR: LEVEL 8: EVALUATE
+[LEVEL 6 INTRO — EVALUATE]
+NARRATOR: LEVEL 6: EVALUATE
 NARRATOR: Bloom's Taxonomy Level: Evaluation -- the highest order of thinking.
 NARRATOR: Last day of term. Mr. Carbis stands at the door as students file in.
 Mr. Carbis: Today, I want you to teach each other what you've learned.

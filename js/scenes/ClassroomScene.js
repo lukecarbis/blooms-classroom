@@ -841,8 +841,8 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                 if (questioning) {
                     questioning.hideQuestion();
                     questioning.boostAttention(100);
-                    // Boost all nearby seated students +10
-                    this.getStudentsInRange(questioning.x, questioning.y, 100, 'seated').forEach(s => {
+                    // Boost all surrounding seated students +10
+                    this.getStudentsInRange(questioning.x, questioning.y, 200, 'seated').forEach(s => {
                         if (s !== questioning) {
                             s.boostAttention(10);
                             this.showInteractionEffect(s.x, s.y, 0x9B59B6);
@@ -983,29 +983,25 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                 break;
             }
             case 'group_work': {
-                // Same as jigsaw but with 6 students
+                // Pull all surrounding seated students to the nearest student's desk
                 const gwHost = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
                 if (!gwHost) break;
-                const gwOthers = this.students.filter(s => s.state === 'seated' && s !== gwHost);
-                if (gwOthers.length < tech.groupSize - 1) break;
-
-                gwOthers.sort((a, b) =>
-                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, a.x, a.y) -
-                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, b.x, b.y)
+                // Find all seated students at surrounding tables (N, NE, E, SE, S, SW, W, NW)
+                const gwNearby = this.students.filter(s =>
+                    s.state === 'seated' && s !== gwHost &&
+                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, s.x, s.y) < 200
                 );
-                const gwGroup = [gwHost, ...gwOthers.slice(0, tech.groupSize - 1)];
+                if (gwNearby.length === 0) break;
+                const gwGroup = [gwHost, ...gwNearby];
 
-                const gwOffsets = [
-                    { x: -16, y: -14 }, { x: 16, y: -14 },
-                    { x: -20, y: 0 },   { x: 20, y: 0 },
-                    { x: -16, y: 14 },  { x: 16, y: 14 },
-                ];
-
+                // Arrange in a circle around the host desk
                 gwGroup.forEach((s, idx) => {
                     s.state = 'jigsaw';
                     if (s !== gwHost) {
-                        const ox = gwHost.seatX + gwOffsets[idx].x;
-                        const oy = gwHost.seatY + gwOffsets[idx].y;
+                        const angle = ((idx - 1) / gwNearby.length) * Math.PI * 2;
+                        const radius = 18;
+                        const ox = gwHost.seatX + Math.cos(angle) * radius;
+                        const oy = gwHost.seatY + Math.sin(angle) * radius;
                         s.moveToPosition(ox, oy, () => { s.state = 'jigsaw'; });
                     }
                 });
