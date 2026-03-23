@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloom's Classroom — A Teaching Journey</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <!-- Phaser 3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+
+    <!-- Config -->
+    <script src="js/config.js"></script>
+
+    <!-- Mechanics (data) -->
+    <script src="js/mechanics/NarrativeData.js"></script>
+    <script src="js/mechanics/TechniqueRegistry.js"></script>
+    <script src="js/mechanics/LevelConfig.js"></script>
+
+    <!-- Entities -->
+    <script src="js/entities/Teacher.js"></script>
+    <script src="js/entities/Student.js"></script>
+
+    <!-- Scenes -->
+    <script src="js/scenes/BootScene.js"></script>
+    <script src="js/scenes/MenuScene.js"></script>
+    <script src="js/scenes/NarrativeScene.js"></script>
+    <script src="js/scenes/ClassroomScene.js"></script>
+    <script src="js/scenes/GameOverScene.js"></script>
+    <script src="js/scenes/VictoryScene.js"></script>
+
+    <!-- Game init -->
+    <script>
+        window.BloomGame = window.BloomGame || {};
+
+        BloomGame.config = {
+            type: Phaser.AUTO,
+            width: BloomGame.DIMENSIONS.WIDTH,
+            height: BloomGame.DIMENSIONS.HEIGHT,
+            parent: 'game-container',
+            backgroundColor: '#1a1a2e',
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    debug: false,
+                },
+            },
+            scene: [
+                BloomGame.BootScene,
+                BloomGame.MenuScene,
+                BloomGame.NarrativeScene,
+                BloomGame.ClassroomScene,
+                BloomGame.GameOverScene,
+                BloomGame.VictoryScene,
+            ],
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+            },
+        };
+
+        window._game = new Phaser.Game(BloomGame.config);
+    </script>
+</body>
+</html>
