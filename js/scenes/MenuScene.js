@@ -31,7 +31,17 @@ BloomGame.MenuScene = class MenuScene extends Phaser.Scene {
         // Taxonomy display
         const levels = ['Remember', 'Understand', 'Apply', 'Analyze', 'Synthesize', 'Evaluate'];
         const colors = ['#2A9D8F', '#27AE60', '#E9C46A', '#E76F51', '#9B59B6', '#E63946'];
+        // Map taxonomy tiers to level indices (some tiers have 2 levels)
+        const tierToLevels = [
+            [0],       // Remember -> Level 1
+            [1],       // Understand -> Level 2
+            [2],       // Apply -> Level 3
+            [3, 4],    // Analyze -> Levels 4-5
+            [5, 6],    // Synthesize -> Levels 6-7
+            [7],       // Evaluate -> Level 8
+        ];
         const startY = 240;
+        this.levelButtons = [];
         levels.forEach((level, i) => {
             const barWidth = 120 + i * 30;
             const gfx = this.add.graphics();
@@ -41,11 +51,91 @@ BloomGame.MenuScene = class MenuScene extends Phaser.Scene {
             gfx.lineStyle(1, color, 0.6);
             gfx.strokeRoundedRect(W / 2 - barWidth / 2, startY + i * 28, barWidth, 22, 4);
 
-            this.add.text(W / 2, startY + i * 28 + 11, level, {
+            const text = this.add.text(W / 2, startY + i * 28 + 11, level, {
                 fontSize: '13px',
-                fontFamily: 'monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 color: colors[i],
             }).setOrigin(0.5);
+
+            // Clickable zone (hidden until cheat activated)
+            const zone = this.add.zone(W / 2, startY + i * 28 + 11, barWidth, 22).setInteractive({ useHandCursor: true });
+            zone.input.enabled = false; // disabled until cheat
+            zone.on('pointerover', () => {
+                if (!this.cheatActive) return;
+                gfx.clear();
+                gfx.fillStyle(color, 0.6);
+                gfx.fillRoundedRect(W / 2 - barWidth / 2, startY + i * 28, barWidth, 22, 4);
+                gfx.lineStyle(2, color, 1);
+                gfx.strokeRoundedRect(W / 2 - barWidth / 2, startY + i * 28, barWidth, 22, 4);
+            });
+            zone.on('pointerout', () => {
+                gfx.clear();
+                gfx.fillStyle(color, 0.3);
+                gfx.fillRoundedRect(W / 2 - barWidth / 2, startY + i * 28, barWidth, 22, 4);
+                gfx.lineStyle(1, color, 0.6);
+                gfx.strokeRoundedRect(W / 2 - barWidth / 2, startY + i * 28, barWidth, 22, 4);
+            });
+            let tierSubIndex = 0;
+            let tierClickTimer = null;
+            zone.on('pointerdown', () => {
+                if (!this.cheatActive) return;
+                const tierLevels = tierToLevels[i];
+
+                if (tierLevels.length === 1) {
+                    // Single level tier — launch immediately
+                    const levelIndex = tierLevels[0];
+                    const cfg = BloomGame.LevelConfig[levelIndex];
+                    this.cameras.main.fadeOut(500, 0, 0, 0);
+                    this.time.delayedCall(500, () => {
+                        this.scene.start('Narrative', {
+                            key: cfg.introKey,
+                            nextScene: 'Classroom',
+                            nextData: { level: levelIndex },
+                        });
+                    });
+                } else {
+                    // Multi-level tier — first click selects sub-level, second click launches
+                    if (tierClickTimer) {
+                        // Second click within window — launch the selected level
+                        tierClickTimer.destroy();
+                        tierClickTimer = null;
+                        const levelIndex = tierLevels[tierSubIndex];
+                        const cfg = BloomGame.LevelConfig[levelIndex];
+                        this.cameras.main.fadeOut(500, 0, 0, 0);
+                        this.time.delayedCall(500, () => {
+                            this.scene.start('Narrative', {
+                                key: cfg.introKey,
+                                nextScene: 'Classroom',
+                                nextData: { level: levelIndex },
+                            });
+                        });
+                    } else {
+                        // First click — show which sub-level, wait for confirm
+                        text.setText(`${level} ${tierSubIndex + 1}/${tierLevels.length} (click again)`);
+                        tierClickTimer = this.time.delayedCall(2000, () => {
+                            // Timeout — cycle to next sub-level
+                            tierSubIndex = (tierSubIndex + 1) % tierLevels.length;
+                            text.setText(level);
+                            tierClickTimer = null;
+                        });
+                    }
+                }
+            });
+
+            this.levelButtons.push({ zone, gfx, text, color, barWidth, tierIndex: i });
+        });
+
+        // IDKFA cheat code listener
+        this.cheatActive = false;
+        this.cheatBuffer = '';
+        this.input.keyboard.on('keydown', (event) => {
+            this.cheatBuffer += event.key.toUpperCase();
+            if (this.cheatBuffer.length > 10) {
+                this.cheatBuffer = this.cheatBuffer.slice(-10);
+            }
+            if (this.cheatBuffer.includes('IDKFA') && !this.cheatActive) {
+                this.activateCheat();
+            }
         });
 
         // Start button
@@ -81,16 +171,43 @@ BloomGame.MenuScene = class MenuScene extends Phaser.Scene {
         // Credits
         this.add.text(W / 2, H - 40, 'WASD / Arrows to move | SPACE / E to interact', {
             fontSize: '12px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#888888',
         }).setOrigin(0.5);
 
         this.add.text(W / 2, H - 20, 'A game about Bloom\'s Taxonomy and finding meaning in teaching', {
             fontSize: '11px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#666666',
         }).setOrigin(0.5);
 
         this.cameras.main.fadeIn(800, 0, 0, 0);
+    }
+
+    activateCheat() {
+        this.cheatActive = true;
+
+        const W = BloomGame.DIMENSIONS.WIDTH;
+
+        // Enable all level buttons
+        this.levelButtons.forEach(btn => {
+            btn.zone.input.enabled = true;
+        });
+
+        // Brief flash to confirm cheat activated
+        const flash = this.add.text(W / 2, 200, 'Level Select Unlocked', {
+            fontSize: '11px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#E9C46A',
+        }).setOrigin(0.5).setAlpha(0);
+
+        this.tweens.add({
+            targets: flash,
+            alpha: 1,
+            duration: 300,
+            yoyo: true,
+            hold: 1000,
+            onComplete: () => flash.destroy(),
+        });
     }
 };

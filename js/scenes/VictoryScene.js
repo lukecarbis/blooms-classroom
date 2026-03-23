@@ -51,7 +51,7 @@ BloomGame.VictoryScene = class VictoryScene extends Phaser.Scene {
 
             const text = this.add.text(W / 2, y + 12, level, {
                 fontSize: '12px',
-                fontFamily: 'monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 color: '#F5F0E8',
             }).setOrigin(0.5).setAlpha(0);
 
@@ -88,7 +88,7 @@ BloomGame.VictoryScene = class VictoryScene extends Phaser.Scene {
         });
 
         // Completion text
-        const complete = this.add.text(W / 2, 510, 'You guided Mr. Thompson through all six levels of Bloom\'s Taxonomy.\nThe journey of a teacher never truly ends.', {
+        const complete = this.add.text(W / 2, 510, 'You guided Mr. Carbis through all six levels of Bloom\'s Taxonomy.\nThe journey of a teacher never truly ends.', {
             fontSize: '13px',
             fontFamily: 'Georgia, serif',
             color: '#888888',
@@ -105,7 +105,7 @@ BloomGame.VictoryScene = class VictoryScene extends Phaser.Scene {
         // Play again
         const again = this.add.text(W / 2, 580, '[ Play Again ]', {
             fontSize: '16px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#2A9D8F',
         }).setOrigin(0.5).setAlpha(0).setInteractive({ useHandCursor: true })
         .on('pointerover', function() { this.setColor('#E9C46A'); })

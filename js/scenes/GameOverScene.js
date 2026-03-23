@@ -89,7 +89,7 @@ BloomGame.GameOverScene = class GameOverScene extends Phaser.Scene {
         const menuY = btnY + 60;
         this.add.text(W / 2, menuY, '[ Return to Menu ]', {
             fontSize: '13px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#888888',
         }).setOrigin(0.5).setInteractive({ useHandCursor: true })
         .on('pointerover', function() { this.setColor('#F5F0E8'); })

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bloom's Classroom — A Teaching Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,19 +19,19 @@
     <script src="js/config.js"></script>
 
     <!-- Mechanics (data) -->
-    <script src="js/mechanics/NarrativeData.js"></script>
-    <script src="js/mechanics/TechniqueRegistry.js"></script>
-    <script src="js/mechanics/LevelConfig.js"></script>
+    <script src="js/mechanics/NarrativeData.js?v=2"></script>
+    <script src="js/mechanics/TechniqueRegistry.js?v=8"></script>
+    <script src="js/mechanics/LevelConfig.js?v=8"></script>
 
     <!-- Entities -->
     <script src="js/entities/Teacher.js"></script>
-    <script src="js/entities/Student.js"></script>
+    <script src="js/entities/Student.js?v=4"></script>
 
     <!-- Scenes -->
-    <script src="js/scenes/BootScene.js"></script>
-    <script src="js/scenes/MenuScene.js"></script>
+    <script src="js/scenes/BootScene.js?v=2"></script>
+    <script src="js/scenes/MenuScene.js?v=6"></script>
     <script src="js/scenes/NarrativeScene.js"></script>
-    <script src="js/scenes/ClassroomScene.js"></script>
+    <script src="js/scenes/ClassroomScene.js?v=20"></script>
     <script src="js/scenes/GameOverScene.js"></script>
     <script src="js/scenes/VictoryScene.js"></script>
 
@@ -42,6 +45,8 @@
             height: BloomGame.DIMENSIONS.HEIGHT,
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
+            antialias: false,
+            roundPixels: false,
             physics: {
                 default: 'arcade',
                 arcade: {

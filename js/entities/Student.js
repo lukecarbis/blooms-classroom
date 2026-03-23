@@ -53,7 +53,7 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
         // Status indicators
         this.statusText = scene.add.text(12, -20, '', {
             fontSize: '14px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
         });
         this.add(this.statusText);
 
@@ -149,7 +149,7 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
         // Visual feedback
         const text = this.scene.add.text(this.x, this.y - 30, '+' + Math.round(amount), {
             fontSize: '14px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#2A9D8F',
             fontStyle: 'bold',
         }).setOrigin(0.5).setDepth(20);
@@ -179,6 +179,11 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
     }
 
     returnToSeat() {
+        // Free assigned station
+        if (this.assignedStation) {
+            this.assignedStation.occupied = false;
+            this.assignedStation = null;
+        }
         this.moveToPosition(this.seatX, this.seatY, () => {
             this.state = 'seated';
         });
@@ -194,9 +199,12 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
         }
 
         // State timer
-        if (this.state === 'at_station') {
+        if (this.state === 'jigsaw') {
+            // Attention refills while in jigsaw group
+            this.attention = Math.min(this.maxAttention, this.attention + 4 * (delta / 1000));
+        } else if (this.state === 'at_station') {
             this.stateTimer -= delta;
-            this.attention = Math.min(this.maxAttention, this.attention + 1.5 * (delta / 1000));
+            this.attention = Math.min(this.maxAttention, this.attention + 3.5 * (delta / 1000));
             if (this.stateTimer <= 0) {
                 this.returnToSeat();
             }
@@ -226,6 +234,11 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
             }
             if (this.linkedTo && this.linkPositive) {
                 rate *= 0.7;
+            }
+
+            // AC slows decay by 20%
+            if (this.scene.acActive) {
+                rate *= 0.8;
             }
 
             this.attention = Math.max(0, this.attention - rate * (delta / 1000));

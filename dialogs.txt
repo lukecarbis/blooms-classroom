@@ -1,0 +1,174 @@
+==========================================
+BLOOM'S CLASSROOM — ALL DIALOGS
+==========================================
+Edit the text below and send it back.
+Keep the format exactly as-is: headers in [brackets], speaker names followed by colon.
+Lines starting with NARRATOR: have no speaker shown.
+==========================================
+
+
+[PROLOGUE]
+NARRATOR: Mr. Carbis adjusts his tie in the reflection of the classroom door. First day. First real class.
+Mr. Carbis: I've studied every pedagogy textbook. I've rehearsed every lesson. I'm ready for this.
+NARRATOR: He takes a deep breath and pushes open the door.
+NARRATOR (classroom): Twelve eyes stare back at him. Some curious. Some indifferent. Some already looking at their phones.
+Mr. Carbis (classroom): Good morning, everyone. I'm Mr. Carbis. Let's learn something together.
+NARRATOR (classroom): The silence is deafening. A chair squeaks. Someone coughs.
+Mr. Carbis (classroom): (Keep it simple. Start with what they know. Build from there.)
+
+
+[LEVEL 1 INTRO — REMEMBER]
+NARRATOR: LEVEL 1: REMEMBER
+NARRATOR: Bloom's Taxonomy Level: Knowledge -- the foundation of all learning.
+Mr. Carbis: Let's start with the basics. I need to see what they already know.
+NARRATOR: Walk to students and press SPACE to ask recall questions.
+NARRATOR: Keep the class average attention above the threshold before time runs out!
+NARRATOR: Move: WASD or Arrow Keys | Interact: SPACE
+
+
+[LEVEL 1 OUTRO]
+NARRATOR: The bell rings. Students shuffle out, some actually smiling.
+Mr. Carbis: That... that actually went well.
+NARRATOR: He erases the whiteboard and looks at the empty room.
+Mr. Carbis: They answered my questions. They remembered the material. This teaching thing might be straightforward after all.
+NARRATOR: But as he packs his bag, a quiet thought nags at the edge of his mind...
+Mr. Carbis: Did they really learn anything? Or did they just repeat what I said?
+
+
+[LEVEL 2 INTRO — UNDERSTAND]
+NARRATOR: LEVEL 2: UNDERSTAND
+NARRATOR: Bloom's Taxonomy Level: Comprehension -- grasping meaning, not just facts.
+Mr. Carbis: A student asked me 'but WHY does that matter?' yesterday. And I froze.
+Mr. Carbis: They can parrot facts back, but I can see it in their eyes -- the understanding isn't there.
+NARRATOR: New technique: Hold SPACE near groups to EXPLAIN concepts (area effect).
+NARRATOR: Some students are more easily distracted than others. Watch for the warning signs.
+
+
+[LEVEL 2 OUTRO]
+NARRATOR: A student lingers after class.
+Student: Mr. Carbis? I think I actually get it now. Like, I can explain it to my friend.
+NARRATOR: He watches the student leave, a warmth spreading in his chest.
+Mr. Carbis: That's what it should feel like. Not just knowledge transferred, but understanding kindled.
+Mr. Carbis: But understanding alone isn't enough either, is it? They need to DO something with it.
+
+
+[LEVEL 3 INTRO — APPLY]
+NARRATOR: LEVEL 3: APPLY
+NARRATOR: Bloom's Taxonomy Level: Application -- using knowledge in new situations.
+Mr. Carbis: I gave them a problem to solve yesterday. Open-ended. No right answer.
+Mr. Carbis: Half of them stared at blank pages. They understood the concepts but couldn't USE them.
+NARRATOR: New technique: Press E near students to assign them to TASK STATIONS.
+NARRATOR: Students at stations gain attention slowly on their own. Guide them to apply what they know!
+
+
+[LEVEL 3 OUTRO]
+NARRATOR: The classroom is scattered with half-finished worksheets and hastily drawn diagrams.
+Mr. Carbis: It's messy. It's loud. It's... is this what learning looks like?
+NARRATOR: He picks up one student's work. It's wrong in places, but the thinking behind it is remarkable.
+Mr. Carbis: They're trying. Really trying. But are they thinking deeply enough?
+NARRATOR: The honeymoon period is fading. The real challenge is just beginning.
+
+
+[LEVEL 4 INTRO — ANALYZE]
+NARRATOR: LEVEL 4: ANALYZE
+NARRATOR: Bloom's Taxonomy Level: Analysis -- breaking apart ideas to understand their structure.
+NARRATOR: Wednesday. Week six. Mr. Carbis sits in the staff room, staring at his coffee.
+Mr. Carbis: A student told me my class was 'boring' today. Right to my face.
+Mr. Carbis: Am I even reaching them? Maybe I'm not cut out for this.
+NARRATOR: Students now INFLUENCE each other. Connected pairs share attention -- for better or worse.
+NARRATOR: Press E near linked students to spark COMPARE & CONTRAST discussions.
+NARRATOR: Turn negative peer influence into positive collaboration!
+
+
+[LEVEL 4 OUTRO]
+NARRATOR: After class, the mentor teacher, Mrs. Okafor, stops by.
+Mrs. Okafor: I watched your lesson through the window. You look exhausted.
+Mr. Carbis: I feel like I'm performing. Dancing on a stage trying to hold their attention.
+Mrs. Okafor: Stop trying to control their attention. Start giving them reasons to care.
+Mrs. Okafor: You can't pour knowledge into them. You have to light the fire.
+NARRATOR: He sits with those words for a long time after she leaves.
+
+
+[LEVEL 5 INTRO — ANALYZE (ADVANCED)]
+NARRATOR: LEVEL 5: ANALYZE (Advanced)
+NARRATOR: Deeper analysis -- questioning assumptions, examining evidence.
+Mr. Carbis: Mrs. Okafor was right. I've been the sage on the stage. Time to try something different.
+Mr. Carbis: What if I asked questions instead of giving answers?
+NARRATOR: Students now raise QUESTION BUBBLES. They disappear quickly -- get to them fast!
+NARRATOR: Walk near a questioning student and press SPACE. Recall Prompt becomes SOCRATIC DIALOG -- a huge attention boost for the student and their neighbours.
+NARRATOR: Press Q to start GROUP WORK -- gathering six students at a desk to collaborate.
+NARRATOR: Risk and reward. Just like real teaching.
+
+
+[LEVEL 5 OUTRO]
+NARRATOR: Something shifts in the air.
+Student: Wait -- so you're saying there ISN'T one right answer?
+Mr. Carbis: I'm saying the question matters more than the answer.
+NARRATOR: For the first time, Mr. Carbis sees genuine curiosity in their eyes.
+NARRATOR: Not compliance. Not performance. Curiosity.
+Mr. Carbis: Maybe this is what it's supposed to feel like.
+
+
+[LEVEL 6 INTRO — SYNTHESIZE]
+NARRATOR: LEVEL 6: SYNTHESIZE
+NARRATOR: Bloom's Taxonomy Level: Synthesis -- combining ideas to create something new.
+Mr. Carbis: I stopped seeing myself as the source of knowledge today.
+Mr. Carbis: I'm not the fountain. I'm the architect. I design the experience.
+NARRATOR: A PROJECT BOARD appears at the front of the room.
+NARRATOR: Press E to send students to contribute. When 3+ students collaborate, a SYNTHESIS EVENT triggers!
+NARRATOR: Guide them to create something greater than the sum of its parts.
+
+
+[LEVEL 6 OUTRO]
+NARRATOR: The project board is covered in ideas, connections, and colorful diagrams.
+NARRATOR: Students are talking over each other -- not in chaos, but in excitement.
+Student: Mr. Carbis, look! We connected YOUR example to the real world!
+Mr. Carbis: You did that. Not me. You.
+NARRATOR: He leans against his desk and watches them build something he never planned.
+Mr. Carbis: The best moments in teaching are when you become unnecessary.
+
+
+[LEVEL 7 INTRO — SYNTHESIZE (ADVANCED)]
+NARRATOR: LEVEL 7: SYNTHESIZE (Advanced)
+NARRATOR: Creative synthesis -- matching ideas to their best expression.
+Mr. Carbis: The classroom has its own energy now. They're building things I never imagined.
+NARRATOR: The project board now has 3 COLOR-CODED ZONES. Students have color affinities.
+NARRATOR: Press 1, 2, or 3 to direct students to matching zones for bonus effectiveness!
+NARRATOR: Perfect matches amplify the learning. Guide their creativity!
+
+
+[LEVEL 7 OUTRO]
+NARRATOR: Mr. Carbis looks at the clock. An hour has passed without anyone noticing.
+Mr. Carbis: I barely spoke today. And it was my best lesson yet.
+NARRATOR: He thinks about Mrs. Okafor's words. Light the fire.
+Mr. Carbis: The fire is lit. Now comes the hardest part.
+Mr. Carbis: Letting go.
+
+
+[LEVEL 8 INTRO — EVALUATE]
+NARRATOR: LEVEL 8: EVALUATE
+NARRATOR: Bloom's Taxonomy Level: Evaluation -- the highest order of thinking.
+NARRATOR: Last day of term. Mr. Carbis stands at the door as students file in.
+Mr. Carbis: Today, I want you to teach each other what you've learned.
+NARRATOR: A PODIUM appears. Press E to invite students to PRESENT.
+NARRATOR: Presenters boost everyone's attention, but need YOUR SUPPORT -- stay close and press SPACE!
+NARRATOR: All techniques are available. Use everything you've learned. This is the final lesson.
+
+
+[EPILOGUE]
+NARRATOR: The bell rings for the last time this term.
+NARRATOR: Students stream out, talking, laughing, still debating the day's presentations.
+Student: Mr. Carbis? Thanks. For, like... actually making us think.
+NARRATOR: He nods, unable to speak past the lump in his throat.
+NARRATOR: The classroom empties. Chairs askew. Whiteboard covered in student handwriting.
+NARRATOR: He sinks into his chair and looks at the ceiling.
+Mr. Carbis: Did I make a difference?
+NARRATOR: He thinks about the student who asked 'but why?' on day one.
+NARRATOR: Today, that same student stood at the podium and explained WHY to the entire class.
+Mr. Carbis: Yeah. Yeah, I think maybe I did.
+NARRATOR: He packs his bag slowly. Turns off the lights.
+NARRATOR: In the empty parking lot, under a sky turning gold, he unlocks his car.
+NARRATOR: Exhausted. Uncertain. Certain of only one thing.
+Mr. Carbis: I'll be back tomorrow.
+NARRATOR: ...
+NARRATOR: THE END

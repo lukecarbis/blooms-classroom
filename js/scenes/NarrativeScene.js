@@ -57,11 +57,11 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
         });
 
         // Continue prompt
-        this.continueText = this.add.text(W - 100, H - 55, '[ SPACE ]', {
+        this.continueText = this.add.text(W - 80, H - 50, '[ SPACE ]', {
             fontSize: '12px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#888888',
-        }).setOrigin(0.5);
+        }).setOrigin(1, 1);
 
         this.tweens.add({
             targets: this.continueText,
@@ -71,8 +71,18 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
             duration: 800,
         });
 
+        // Classroom backdrop (hidden by default, behind dialog)
+        this.classroomGroup = this.add.container(0, 0).setVisible(false).setDepth(0);
+        this.drawClassroomBackdrop();
+
+        // Ensure dialog UI is above the classroom backdrop
+        panel.setDepth(10);
+        this.speakerText.setDepth(11);
+        this.dialogText.setDepth(11);
+        this.continueText.setDepth(11);
+
         // Teacher portrait (simple)
-        this.portrait = this.add.graphics();
+        this.portrait = this.add.graphics().setDepth(11);
         this.drawPortrait();
 
         // Input
@@ -86,12 +96,93 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
         this.showLine();
     }
 
+    drawClassroomBackdrop() {
+        const W = BloomGame.DIMENSIONS.WIDTH;
+        const H = BloomGame.DIMENSIONS.HEIGHT;
+        const g = this.add.graphics();
+
+        // Floor
+        g.fillStyle(0xE8E0D0);
+        g.fillRect(0, 0, W, H);
+
+        // Floor tiles
+        g.lineStyle(1, 0xDDD5C5, 0.3);
+        for (let x = 0; x < W; x += 32) g.lineBetween(x, 0, x, H);
+        for (let y = 0; y < H; y += 32) g.lineBetween(0, y, W, y);
+
+        // Walls
+        g.fillStyle(0x8B7355);
+        g.fillRect(0, 0, W, 8);
+        g.fillRect(0, 0, 8, H);
+        g.fillRect(W - 8, 0, 8, H);
+
+        // Whiteboard
+        g.fillStyle(0xA0785A);
+        g.fillRoundedRect(W / 2 - 120, 10, 240, 6, 2);
+        g.fillStyle(0xFFFFFF);
+        g.fillRoundedRect(W / 2 - 116, 14, 232, 30, 4);
+
+        this.classroomGroup.add(g);
+
+        // Teacher at the front of the room
+        const tg = this.add.graphics();
+        const tx = W / 2, ty = 65;
+        tg.fillStyle(0x264653, 0.6);
+        tg.fillCircle(tx, ty, 30);
+        tg.fillStyle(BloomGame.COLORS.TEACHER);
+        tg.fillRoundedRect(tx - 12, ty - 5, 24, 28, 4);
+        tg.fillStyle(0xF5CBA7);
+        tg.fillCircle(tx, ty - 12, 11);
+        tg.fillStyle(0x4A3728);
+        tg.fillEllipse(tx, ty - 20, 18, 8);
+        tg.fillStyle(BloomGame.COLORS.ACCENT);
+        tg.fillTriangle(tx - 2, ty - 3, tx + 2, ty - 3, tx, ty + 8);
+        this.classroomGroup.add(tg);
+
+        // 6 students at desks (12 eyes = 6 students)
+        const colors = BloomGame.STUDENT_COLORS;
+        const rows = 2, cols = 3;
+        const marginX = 130, marginTop = 130;
+        const spacingX = (W - 2 * marginX) / (cols - 1);
+        const spacingY = 80;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = marginX + c * spacingX;
+                const y = marginTop + r * spacingY;
+                const sg = this.add.graphics();
+                const color = colors[(r * cols + c) % colors.length];
+
+                // Desk
+                sg.fillStyle(0xC4A882);
+                sg.fillRoundedRect(x - 18, y + 8, 36, 16, 3);
+                sg.lineStyle(1, 0xA0785A, 0.5);
+                sg.strokeRoundedRect(x - 18, y + 8, 36, 16, 3);
+
+                // Body
+                sg.fillStyle(color);
+                sg.fillRoundedRect(x - 8, y - 2, 16, 14, 3);
+
+                // Head
+                sg.fillStyle(0xF5CBA7);
+                sg.fillCircle(x, y - 8, 7);
+
+                // Hair (varied)
+                const hairColors = [0x4A3728, 0x2C1810, 0x8B6914, 0x1A1A1A, 0xD4956B];
+                sg.fillStyle(hairColors[(r * cols + c) % hairColors.length]);
+                sg.fillEllipse(x, y - 13, 12, 5);
+
+                this.classroomGroup.add(sg);
+            }
+        }
+    }
+
     drawPortrait() {
         const C = BloomGame.COLORS;
         const px = 160, py = 260;
         this.portrait.clear();
 
-        // Only show for speaker lines with Mr. Thompson
+        // Only show for speaker lines with Mr. Carbis
         // Drawn each time a line changes
     }
 
@@ -102,7 +193,7 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
         const px = 90, py = 160;
         const g = this.portrait;
 
-        if (speaker === 'Mr. Thompson') {
+        if (speaker === 'Mr. Carbis') {
             // Simple portrait
             g.fillStyle(0x264653, 0.6);
             g.fillCircle(px, py, 30);
@@ -145,8 +236,24 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
         }
 
         const line = this.lines[this.currentLine];
+
+        // Toggle classroom backdrop
+        if (line.scene === 'classroom') {
+            this.classroomGroup.setVisible(true);
+            this.cameras.main.setBackgroundColor(0xF5F0E8);
+        } else {
+            this.classroomGroup.setVisible(false);
+            const data = BloomGame.NarrativeData[this.narrativeKey];
+            this.cameras.main.setBackgroundColor(data.background || 0x264653);
+        }
+
         this.speakerText.setText(line.speaker || '');
-        this.updatePortrait(line.speaker);
+        // Hide speaker portrait when classroom backdrop is showing (teacher is already in the scene)
+        if (line.scene === 'classroom') {
+            this.portrait.clear();
+        } else {
+            this.updatePortrait(line.speaker);
+        }
         this.fullText = line.text;
         this.displayedText = '';
         this.charIndex = 0;

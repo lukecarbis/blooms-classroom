@@ -8,6 +8,12 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
     init(data) {
         this.levelIndex = data.level || 0;
         this.levelConfig = BloomGame.LevelConfig[this.levelIndex];
+        // Reset powerup state to prevent carryover on retry
+        this.acActive = false;
+        this.acTimer = 0;
+        this.coffeeBoosted = false;
+        this.coffeeTimer = 0;
+        this.ictActive = false;
     }
 
     create() {
@@ -29,6 +35,8 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         this.links = [];
         this.projectStudents = [];
         this.presenterActive = null;
+        this.deskPositions = [];
+        this.jigsawGroups = []; // { students: [], hostX, hostY, timer }
 
         // Draw classroom
         this.drawClassroom();
@@ -57,9 +65,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         };
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.eKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-        this.oneKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
-        this.twoKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
-        this.threeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+        this.qKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 
         // HUD
         this.createHUD();
@@ -71,6 +77,37 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                 callback: () => this.spawnQuestion(),
                 loop: true,
             });
+        }
+
+        // Coffee mug power-ups
+        this.coffeeMugs = [];
+        this.coffeeBoosted = false;
+        this.coffeeTimer = 0;
+        this.coffeeMaxDuration = 12000;
+        this.coffeeSpawnCount = 0;
+        const powerupCount = cfg.powerupFrequency || 2;
+        this.coffeeMaxSpawns = powerupCount;
+        // Schedule spawns at random times during the lesson
+        for (let i = 0; i < this.coffeeMaxSpawns; i++) {
+            const delay = (Math.random() * 0.7 + 0.1) * cfg.duration * 1000;
+            this.time.delayedCall(delay, () => this.spawnCoffeeMug());
+        }
+
+        // Air conditioner
+        this.acActive = false;
+        this.acTimer = 0;
+        this.acMaxDuration = 30000; // 30 seconds
+
+        // ICT power-up
+        this.ictPickups = [];
+        this.ictActive = false; // whiteboard flashing
+        this.ictTimer = 0;
+        this.ictMaxDuration = 3000;
+        // Schedule ICT spawns at random times during the lesson
+        const ictCount = Math.max(1, Math.floor(powerupCount / 2));
+        for (let i = 0; i < ictCount; i++) {
+            const ictDelay = (Math.random() * 0.5 + 0.2) * cfg.duration * 1000;
+            this.time.delayedCall(ictDelay, () => this.spawnICT());
         }
 
         // Start announcement
@@ -109,13 +146,32 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         bg.fillRoundedRect(W / 2 - 116, 62, 232, 30, 4);
 
         // Whiteboard text
-        this.add.text(W / 2, 78, this.levelConfig.bloomLabel, {
+        this.whiteboardText = this.add.text(W / 2, 78, this.levelConfig.bloomLabel, {
             fontSize: '14px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#264653',
         }).setOrigin(0.5).setDepth(1);
 
         bg.setDepth(0);
+
+        // Air conditioner unit at front-right of room (mounted on front wall)
+        this.acX = W / 2 + 200;
+        this.acY = 68;
+        const acGfx = this.add.graphics().setDepth(2);
+        // AC body - wall-mounted unit
+        acGfx.fillStyle(0xDDDDDD);
+        acGfx.fillRoundedRect(this.acX - 22, this.acY - 6, 44, 14, 3);
+        // Vent slats
+        acGfx.lineStyle(1, 0xBBBBBB, 0.8);
+        for (let i = 0; i < 5; i++) {
+            acGfx.lineBetween(this.acX - 16 + i * 8, this.acY + 2, this.acX - 16 + i * 8, this.acY + 6);
+        }
+        // Status light (drawn separately so we can update it)
+        this.acLight = this.add.graphics().setDepth(3);
+        this.drawACLight();
+
+        // Air particles container (for blowing animation)
+        this.acAirParticles = [];
     }
 
     createStudents() {
@@ -152,6 +208,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
                 // Desk sprite
                 const desk = this.add.image(x, y + 12, 'desk').setDepth(2);
+                this.deskPositions.push({ x, y: y + 12 });
 
                 // Student
                 const student = new BloomGame.Student(this, x, y - 4, {
@@ -177,14 +234,23 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
             const x = 100 + i * ((W - 200) / (count - 1 || 1));
             const y = BloomGame.DIMENSIONS.HEIGHT - 100;
 
-            const station = this.add.image(x, y, 'station').setDepth(1);
-            const label = this.add.text(x, y, 'TASK', {
-                fontSize: '10px',
-                fontFamily: 'monospace',
-                color: '#A0785A',
+            // Draw activity table (bigger than a desk)
+            const tableGfx = this.add.graphics().setDepth(1);
+            tableGfx.fillStyle(0xC4A882);
+            tableGfx.fillRoundedRect(x - 30, y - 12, 60, 28, 5);
+            tableGfx.lineStyle(1, 0xA0785A, 0.6);
+            tableGfx.strokeRoundedRect(x - 30, y - 12, 60, 28, 5);
+            // Table top highlight
+            tableGfx.fillStyle(0xD4B892, 0.5);
+            tableGfx.fillRoundedRect(x - 26, y - 8, 52, 10, 3);
+
+            const label = this.add.text(x, y + 4, 'ACTIVITY', {
+                fontSize: '7px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#8B7355',
             }).setOrigin(0.5).setDepth(2);
 
-            this.stations.push({ x, y, sprite: station, occupied: 0 });
+            this.stations.push({ x, y, sprite: tableGfx, label, occupied: false });
         }
     }
 
@@ -237,7 +303,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
         this.add.text(W / 2, 116, 'PROJECT BOARD', {
             fontSize: '11px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#264653',
         }).setOrigin(0.5).setDepth(3);
 
@@ -259,7 +325,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
         this.add.text(this.podiumX, this.podiumY + 26, 'PODIUM', {
             fontSize: '9px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#8B7355',
         }).setOrigin(0.5).setDepth(3);
     }
@@ -284,14 +350,14 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
         this.add.text(12, 30, cfg.bloomLabel, {
             fontSize: '12px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#E9C46A',
         }).setDepth(51);
 
         // Timer
         this.timerText = this.add.text(W / 2, 16, '', {
             fontSize: '22px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#F5F0E8',
             fontStyle: 'bold',
         }).setOrigin(0.5).setDepth(51);
@@ -299,33 +365,44 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         // Average attention
         this.avgText = this.add.text(W / 2, 38, '', {
             fontSize: '13px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#F5F0E8',
         }).setOrigin(0.5).setDepth(51);
 
         // Threshold indicator
         this.add.text(W - 12, 8, `Goal: ${cfg.attentionThreshold}%`, {
             fontSize: '12px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#E9C46A',
         }).setOrigin(1, 0).setDepth(51);
 
         // Technique bar
         this.techBar = this.add.graphics().setDepth(50);
+        this.techCooldownBar = this.add.graphics().setDepth(51);
         this.techTexts = [];
         this.drawTechBar();
 
         // Synthesis / Present counters
         if (cfg.hasProjectBoard) {
             this.synthesisText = this.add.text(W - 12, 28, '', {
-                fontSize: '11px', fontFamily: 'monospace', color: '#F5F0E8',
+                fontSize: '11px', fontFamily: '"Press Start 2P", monospace', color: '#F5F0E8',
             }).setOrigin(1, 0).setDepth(51);
         }
         if (cfg.hasPodium) {
             this.presentText = this.add.text(W - 12, 40, '', {
-                fontSize: '11px', fontFamily: 'monospace', color: '#F5F0E8',
+                fontSize: '11px', fontFamily: '"Press Start 2P", monospace', color: '#F5F0E8',
             }).setOrigin(1, 0).setDepth(51);
         }
+
+        // Powerup decay bar (shared between coffee and AC)
+        const H = BloomGame.DIMENSIONS.HEIGHT;
+        this.powerupDecayBar = this.add.graphics().setDepth(51);
+        this.powerupDecayLabel = this.add.text(W / 2, H - 66, '', {
+            fontSize: '8px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#E9C46A',
+        }).setOrigin(0.5).setDepth(51);
+        this.powerupDecayLabel.setVisible(false);
     }
 
     drawTechBar() {
@@ -338,28 +415,29 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         this.techTexts.forEach(t => t.destroy());
         this.techTexts = [];
 
-        const barY = H - 36;
+        const barY = H - 52;
         this.techBar.clear();
         this.techBar.fillStyle(BloomGame.COLORS.UI_DARK, 0.75);
-        this.techBar.fillRect(0, barY - 4, W, 40);
+        this.techBar.fillRect(0, barY - 4, W, 56);
 
-        const startX = 20;
-        const slotW = 110;
+        const startX = 12;
+        const fontSize = techs.length > 4 ? '8px' : '9px';
 
+        let curX = startX;
         techs.forEach((techId, i) => {
             const tech = BloomGame.Techniques[techId];
             if (!tech) return;
 
-            const x = startX + i * slotW;
-
-            const text = this.add.text(x, barY + 4, `[${tech.key}] ${tech.name}`, {
-                fontSize: '11px',
-                fontFamily: 'monospace',
+            const text = this.add.text(curX, barY + 4, `[${tech.key}] ${tech.name}`, {
+                fontSize,
+                fontFamily: '"Press Start 2P", monospace',
                 color: '#F5F0E8',
             }).setDepth(51);
 
             this.techTexts.push(text);
+            curX += text.width + 14;
         });
+
     }
 
     showAnnouncement(title, subtitle, duration) {
@@ -379,7 +457,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
         const t2 = this.add.text(W / 2, H / 2 + 18, subtitle, {
             fontSize: '16px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#E9C46A',
         }).setOrigin(0.5).setDepth(101).setAlpha(0);
 
@@ -399,11 +477,349 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         });
     }
 
+    // === AIR CONDITIONER ===
+
+    drawACLight() {
+        this.acLight.clear();
+        const color = this.acActive ? 0x00FF00 : 0xFF0000;
+        this.acLight.fillStyle(color);
+        this.acLight.fillCircle(this.acX + 18, this.acY - 2, 2);
+        if (this.acActive) {
+            this.acLight.fillStyle(color, 0.3);
+            this.acLight.fillCircle(this.acX + 18, this.acY - 2, 4);
+        }
+    }
+
+    toggleAC() {
+        if (this.acActive) return;
+
+        this.acActive = true;
+        this.acTimer = this.acMaxDuration;
+        this.drawACLight();
+    }
+
+    spawnAirParticle() {
+        const x = this.acX - 16 + Math.random() * 32;
+        const y = this.acY + 10;
+        const particle = this.add.graphics().setDepth(1);
+        particle.fillStyle(0xADD8E6, 0.3 + Math.random() * 0.2);
+        const size = 2 + Math.random() * 3;
+        particle.fillCircle(0, 0, size);
+        particle.setPosition(x, y);
+
+        this.tweens.add({
+            targets: particle,
+            y: y + 40 + Math.random() * 30,
+            x: x + (Math.random() - 0.5) * 30,
+            alpha: 0,
+            duration: 1000 + Math.random() * 800,
+            ease: 'Quad.easeOut',
+            onComplete: () => particle.destroy(),
+        });
+    }
+
+    updateAC(delta) {
+        if (!this.acActive) return;
+        this.acTimer -= delta;
+
+        // Flash the green light
+        if (Math.floor(this.acTimer / 500) % 2 === 0) {
+            this.acLight.setAlpha(1);
+        } else {
+            this.acLight.setAlpha(0.5);
+        }
+
+        // Spawn air particles
+        if (!this.acParticleTimer) this.acParticleTimer = 0;
+        this.acParticleTimer -= delta;
+        if (this.acParticleTimer <= 0) {
+            this.spawnAirParticle();
+            this.acParticleTimer = 80 + Math.random() * 120;
+        }
+
+        if (this.acTimer <= 0) {
+            this.acActive = false;
+            this.acLight.setAlpha(1);
+            this.drawACLight();
+            this.acParticleTimer = 0;
+        }
+    }
+
+    // === POWERUP SPAWN HELPER ===
+
+    getValidPowerupSpawnPoint() {
+        if (this.deskPositions.length === 0) return null;
+
+        // Pick a random desk and offset from it, avoiding overlap
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const desk = this.deskPositions[Math.floor(Math.random() * this.deskPositions.length)];
+            // Offset 30-50px in a random direction from the desk
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 30 + Math.random() * 20;
+            const x = desk.x + Math.cos(angle) * dist;
+            const y = desk.y + Math.sin(angle) * dist;
+
+            // Make sure we're not right on top of a student
+            let tooClose = false;
+            for (const student of this.students) {
+                if (Phaser.Math.Distance.Between(x, y, student.seatX, student.seatY) < 20) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            if (!tooClose) return { x, y };
+        }
+
+        // Fallback: offset from a random desk
+        const desk = this.deskPositions[Math.floor(Math.random() * this.deskPositions.length)];
+        return { x: desk.x + 35, y: desk.y + 25 };
+    }
+
+    // === COFFEE MUG POWER-UP ===
+
+    spawnCoffeeMug() {
+        if (!this.gameRunning) return;
+        // Don't spawn if a powerup is already active or a mug is already on the field
+        if (this.coffeeBoosted || this.acActive || this.ictActive || this.coffeeMugs.length > 0 || this.ictPickups.length > 0) {
+            // Retry in 3 seconds
+            this.time.delayedCall(3000, () => this.spawnCoffeeMug());
+            return;
+        }
+
+        const pos = this.getValidPowerupSpawnPoint();
+        if (!pos) return;
+        const { x, y } = pos;
+
+        const mug = this.add.image(x, y, 'coffee_mug').setDepth(5);
+
+        // Bobbing animation
+        this.tweens.add({
+            targets: mug,
+            y: y - 4,
+            yoyo: true,
+            repeat: -1,
+            duration: 600,
+            ease: 'Sine.easeInOut',
+        });
+
+        // Subtle glow
+        const glow = this.add.graphics().setDepth(4);
+        glow.fillStyle(0xE9C46A, 0.2);
+        glow.fillCircle(x, y, 16);
+        this.tweens.add({
+            targets: glow,
+            alpha: 0.1,
+            yoyo: true,
+            repeat: -1,
+            duration: 800,
+        });
+
+        const mugData = { sprite: mug, glow, x, y, lifetime: 10000 };
+        this.coffeeMugs.push(mugData);
+    }
+
+    checkCoffeePickup() {
+        const teacher = this.teacher;
+        for (let i = this.coffeeMugs.length - 1; i >= 0; i--) {
+            const mug = this.coffeeMugs[i];
+            const dist = Phaser.Math.Distance.Between(teacher.x, teacher.y, mug.x, mug.y);
+            if (dist < 30) {
+                // Pick up!
+                const px = mug.x, py = mug.y;
+                mug.sprite.destroy();
+                mug.glow.destroy();
+                this.coffeeMugs.splice(i, 1);
+                this.activateCoffeeBoost(px, py);
+            }
+        }
+    }
+
+    updateCoffeeMugLifetimes(delta) {
+        for (let i = this.coffeeMugs.length - 1; i >= 0; i--) {
+            const mug = this.coffeeMugs[i];
+            mug.lifetime -= delta;
+            // Fade out in last 3 seconds
+            if (mug.lifetime < 3000) {
+                const alpha = mug.lifetime / 3000;
+                mug.sprite.setAlpha(alpha);
+                mug.glow.setAlpha(alpha * 0.2);
+            }
+            if (mug.lifetime <= 0) {
+                mug.sprite.destroy();
+                mug.glow.destroy();
+                this.coffeeMugs.splice(i, 1);
+            }
+        }
+    }
+
+    activateCoffeeBoost(pickupX, pickupY) {
+        const teacher = this.teacher;
+        teacher.speedMultiplier = 2.0;
+        teacher.cooldownMultiplier = 2.0;
+        this.coffeeBoosted = true;
+        this.coffeeTimer = this.coffeeMaxDuration;
+
+        // Minimal floating text just above the pickup spot
+        const text = this.add.text(pickupX, pickupY - 20, 'Coffee Boost!', {
+            fontSize: '11px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#E9C46A',
+            fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(20);
+
+        this.tweens.add({
+            targets: text,
+            y: text.y - 25,
+            alpha: 0,
+            duration: 1200,
+            ease: 'Quad.easeOut',
+            onComplete: () => text.destroy(),
+        });
+    }
+
+    updateCoffeeBoost(delta) {
+        if (!this.coffeeBoosted) return;
+        this.coffeeTimer -= delta;
+        if (this.coffeeTimer <= 0) {
+            this.teacher.speedMultiplier = 1;
+            this.teacher.cooldownMultiplier = 1;
+            this.coffeeBoosted = false;
+        }
+    }
+
+    // === ICT POWER-UP ===
+
+    spawnICT() {
+        if (!this.gameRunning) return;
+        if (this.coffeeBoosted || this.acActive || this.ictActive || this.coffeeMugs.length > 0 || this.ictPickups.length > 0) {
+            // Retry in 3 seconds
+            this.time.delayedCall(3000, () => this.spawnICT());
+            return;
+        }
+
+        const pos = this.getValidPowerupSpawnPoint();
+        if (!pos) return;
+        const { x, y } = pos;
+
+        const sprite = this.add.image(x, y, 'ict_computer').setDepth(5);
+
+        this.tweens.add({
+            targets: sprite,
+            y: y - 4,
+            yoyo: true,
+            repeat: -1,
+            duration: 600,
+            ease: 'Sine.easeInOut',
+        });
+
+        const glow = this.add.graphics().setDepth(4);
+        glow.fillStyle(0x4488FF, 0.2);
+        glow.fillCircle(x, y, 16);
+        this.tweens.add({
+            targets: glow,
+            alpha: 0.1,
+            yoyo: true,
+            repeat: -1,
+            duration: 800,
+        });
+
+        this.ictPickups.push({ sprite, glow, x, y, lifetime: 5000 });
+    }
+
+    checkICTPickup() {
+        const teacher = this.teacher;
+        for (let i = this.ictPickups.length - 1; i >= 0; i--) {
+            const ict = this.ictPickups[i];
+            const dist = Phaser.Math.Distance.Between(teacher.x, teacher.y, ict.x, ict.y);
+            if (dist < 30) {
+                ict.sprite.destroy();
+                ict.glow.destroy();
+                this.ictPickups.splice(i, 1);
+
+                // Immediately activate ICT
+                this.activateICT();
+            }
+        }
+    }
+
+    updateICTPickupLifetimes(delta) {
+        for (let i = this.ictPickups.length - 1; i >= 0; i--) {
+            const ict = this.ictPickups[i];
+            ict.lifetime -= delta;
+            if (ict.lifetime < 2000) {
+                const alpha = ict.lifetime / 2000;
+                ict.sprite.setAlpha(alpha);
+                ict.glow.setAlpha(alpha * 0.2);
+            }
+            if (ict.lifetime <= 0) {
+                ict.sprite.destroy();
+                ict.glow.destroy();
+                this.ictPickups.splice(i, 1);
+            }
+        }
+    }
+
+    activateICT() {
+        this.ictActive = true;
+        this.ictTimer = this.ictMaxDuration;
+
+        // Max all student attention once
+        this.students.forEach(s => {
+            s.attention = s.maxAttention;
+        });
+
+        // Hide whiteboard text, show flashing ICT text
+        if (this.whiteboardText) this.whiteboardText.setVisible(false);
+
+        const W = BloomGame.DIMENSIONS.WIDTH;
+        this.ictFlashText = this.add.text(W / 2, 78, 'ICT!', {
+            fontSize: '18px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#FF0000',
+            fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(10);
+
+        this.ictColorIndex = 0;
+        this.ictColorTimer = 0;
+    }
+
+    updateICT(delta) {
+        if (!this.ictActive) return;
+        this.ictTimer -= delta;
+
+        // Rainbow flash the ICT text
+        if (this.ictFlashText) {
+            const colors = ['#FF0000', '#FF8800', '#FFFF00', '#00FF00', '#0088FF', '#8800FF', '#FF00FF'];
+            this.ictColorTimer -= delta;
+            if (this.ictColorTimer <= 0) {
+                this.ictColorIndex = (this.ictColorIndex + 1) % colors.length;
+                this.ictFlashText.setColor(colors[this.ictColorIndex]);
+                this.ictColorTimer = 150;
+            }
+        }
+
+        if (this.ictTimer <= 0) {
+            this.ictActive = false;
+            if (this.ictFlashText) {
+                this.ictFlashText.destroy();
+                this.ictFlashText = null;
+            }
+            if (this.whiteboardText) this.whiteboardText.setVisible(true);
+        }
+    }
+
     // === INPUT HANDLING ===
 
     handleSpacePress() {
         const cfg = this.levelConfig;
         const teacher = this.teacher;
+
+        // Air conditioner - toggle if near and not already on
+        const acDist = Phaser.Math.Distance.Between(teacher.x, teacher.y, this.acX, this.acY);
+        if (acDist < 50 && !this.acActive) {
+            this.toggleAC();
+            return;
+        }
 
         // Check for supporting a presenter
         if (this.presenterActive) {
@@ -415,27 +831,46 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
             }
         }
 
-        // AoE Explain
-        if (cfg.techniques.includes('explain') && teacher.canUseTechnique('explain')) {
-            const tech = BloomGame.Techniques.explain;
-            const nearby = this.getStudentsInRange(teacher.x, teacher.y, tech.range, 'seated');
-            if (nearby.length > 0) {
-                teacher.showAura(tech.range, tech.color);
-                teacher.startChannel(tech.channelTime, () => {
-                    const targets = this.getStudentsInRange(teacher.x, teacher.y, tech.range, 'seated');
-                    targets.forEach(s => {
-                        s.boostAttention(tech.attentionBoost);
-                        this.showInteractionEffect(s.x, s.y, tech.color);
-                    });
-                });
-                teacher.startCooldown('explain', tech.cooldown);
-                return;
-            }
-        }
-
-        // Single-target Recall Prompt
+        // Single-target Recall Prompt (also affects jigsaw groups)
         if (cfg.techniques.includes('recall_prompt') && teacher.canUseTechnique('recall_prompt')) {
             const tech = BloomGame.Techniques.recall_prompt;
+
+            // Socratic Dialog: if near a student with a question bubble, big boost + nearby boost
+            if (cfg.hasQuestions) {
+                const questioning = this.students.find(s => s.hasQuestion && Phaser.Math.Distance.Between(teacher.x, teacher.y, s.x, s.y) < tech.range);
+                if (questioning) {
+                    questioning.hideQuestion();
+                    questioning.boostAttention(100);
+                    // Boost all nearby seated students +10
+                    this.getStudentsInRange(questioning.x, questioning.y, 100, 'seated').forEach(s => {
+                        if (s !== questioning) {
+                            s.boostAttention(10);
+                            this.showInteractionEffect(s.x, s.y, 0x9B59B6);
+                        }
+                    });
+                    this.showInteractionEffect(questioning.x, questioning.y, 0x9B59B6);
+                    teacher.startCooldown('recall_prompt', tech.cooldown);
+                    return;
+                }
+            }
+
+            // Check if near any jigsaw group — boost all groups
+            if (this.jigsawGroups.length > 0) {
+                const nearGroup = this.jigsawGroups.some(g =>
+                    Phaser.Math.Distance.Between(teacher.x, teacher.y, g.hostX, g.hostY) < tech.range
+                );
+                if (nearGroup) {
+                    this.jigsawGroups.forEach(group => {
+                        group.students.forEach(s => {
+                            s.boostAttention(tech.attentionBoost);
+                            this.showInteractionEffect(s.x, s.y, tech.color);
+                        });
+                    });
+                    teacher.startCooldown('recall_prompt', tech.cooldown);
+                    return;
+                }
+            }
+
             const nearest = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
             if (nearest) {
                 nearest.boostAttention(tech.attentionBoost);
@@ -446,193 +881,230 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         }
     }
 
-    handleEPress() {
+    handleTechniquePress(keyStr) {
         const cfg = this.levelConfig;
         const teacher = this.teacher;
 
-        // Peer Teaching (send to podium)
-        if (cfg.hasPodium && cfg.techniques.includes('peer_teach') && teacher.canUseTechnique('peer_teach') && !this.presenterActive) {
-            const nearest = this.getNearestStudent(teacher.x, teacher.y, 60, 'seated');
-            if (nearest && nearest.attention > 40) {
-                nearest.moveToPosition(this.podiumX, this.podiumY - 20, () => {
-                    nearest.state = 'presenting';
-                    nearest.stateTimer = 8000;
-                    this.presenterActive = nearest;
-                });
-                teacher.startCooldown('peer_teach', BloomGame.Techniques.peer_teach.cooldown);
-                return;
-            }
-        }
+        // Find which technique is bound to this key
+        const techId = cfg.techniques.find(id => BloomGame.Techniques[id] && BloomGame.Techniques[id].key === keyStr);
+        if (!techId) return;
+        const tech = BloomGame.Techniques[techId];
 
-        // Group Project (send to board)
-        if (cfg.hasProjectBoard && cfg.techniques.includes('group_project') && teacher.canUseTechnique('group_project')) {
-            const nearest = this.getNearestStudent(teacher.x, teacher.y, 60, 'seated');
-            if (nearest) {
-                let tx = this.projectBoardX + (Math.random() - 0.5) * 100;
-                let ty = this.projectBoardY + 35;
+        // Check cooldown
+        if (!teacher.canUseTechnique(techId)) return;
 
-                if (cfg.hasColorZones) {
-                    // Direct to zone based on affinity
-                    const zone = nearest.zoneAffinity;
-                    tx = this.projectBoardX - 90 + zone * 90;
+        // Handle each technique type
+        switch (techId) {
+            case 'explain': {
+                const nearby = this.getStudentsInRange(teacher.x, teacher.y, tech.range, 'seated');
+                if (nearby.length > 0) {
+                    // Show radius ring
+                    const ring = this.add.graphics().setDepth(15);
+                    ring.lineStyle(2, tech.color, 0.6);
+                    ring.strokeCircle(0, 0, tech.range);
+                    ring.setPosition(teacher.x, teacher.y);
+                    this.tweens.add({
+                        targets: ring,
+                        alpha: 0,
+                        duration: 600,
+                        ease: 'Quad.easeOut',
+                        onComplete: () => ring.destroy(),
+                    });
+                    nearby.forEach(s => {
+                        s.boostAttention(tech.attentionBoost);
+                        this.showInteractionEffect(s.x, s.y, tech.color);
+                    });
+                    teacher.startCooldown(techId, tech.cooldown);
                 }
-
-                nearest.moveToPosition(tx, ty, () => {
-                    nearest.state = 'at_project';
-                    nearest.stateTimer = 10000;
-                    this.projectStudents.push(nearest);
-                    nearest.boostAttention(BloomGame.Techniques.group_project.attentionBoost);
-                    this.checkSynthesisEvent();
-                });
-                teacher.startCooldown('group_project', BloomGame.Techniques.group_project.cooldown);
-                return;
+                break;
             }
-        }
+            case 'guided_practice': {
+                if (!cfg.hasStations) return;
+                // Find an open station (max 1 student per table)
+                const openStations = this.stations.filter(s => !s.occupied);
+                if (openStations.length === 0) return;
+                const nearest = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (nearest) {
+                    // Find nearest open station
+                    let bestStation = null;
+                    let bestDist = Infinity;
+                    openStations.forEach(s => {
+                        const d = Phaser.Math.Distance.Between(nearest.x, nearest.y, s.x, s.y);
+                        if (d < bestDist) { bestDist = d; bestStation = s; }
+                    });
+                    if (bestStation) {
+                        bestStation.occupied = true;
+                        nearest.assignedStation = bestStation;
+                        nearest.moveToPosition(bestStation.x, bestStation.y - 8, () => {
+                            nearest.state = 'at_station';
+                            nearest.stateTimer = 10000;
+                        });
+                    }
+                }
+                break;
+            }
+            case 'jigsaw': {
+                // Nearest seated student becomes the host; 3 closest seated students join them
+                const host = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (!host) break;
+                const otherSeated = this.students.filter(s => s.state === 'seated' && s !== host);
+                if (otherSeated.length < tech.groupSize - 1) break;
 
-        // Compare & Contrast (linked students)
-        if (cfg.hasLinks && cfg.techniques.includes('compare_contrast') && teacher.canUseTechnique('compare_contrast')) {
-            const nearest = this.getNearestStudent(teacher.x, teacher.y, 60, 'seated');
-            if (nearest && nearest.linkedTo) {
-                const tech = BloomGame.Techniques.compare_contrast;
-                nearest.boostAttention(tech.attentionBoost);
-                nearest.linkedTo.boostAttention(tech.attentionBoost);
-                nearest.linkPositive = true;
-                nearest.linkedTo.linkPositive = true;
-
-                // Update link visuals
-                const link = this.links.find(l =>
-                    (l.a === nearest && l.b === nearest.linkedTo) ||
-                    (l.b === nearest && l.a === nearest.linkedTo)
+                // Find 3 closest seated students to the host
+                otherSeated.sort((a, b) =>
+                    Phaser.Math.Distance.Between(host.x, host.y, a.x, a.y) -
+                    Phaser.Math.Distance.Between(host.x, host.y, b.x, b.y)
                 );
-                if (link) link.positive = true;
+                const group = [host, ...otherSeated.slice(0, tech.groupSize - 1)];
 
-                // Reset after time
-                this.time.delayedCall(12000, () => {
-                    nearest.linkPositive = false;
-                    nearest.linkedTo.linkPositive = false;
-                    if (link) link.positive = false;
+                const offsets = [
+                    { x: -16, y: -10 },
+                    { x: 16, y: -10 },
+                    { x: -16, y: 10 },
+                    { x: 16, y: 10 },
+                ];
+
+                group.forEach((s, idx) => {
+                    s.state = 'jigsaw';
+                    if (s !== host) {
+                        const ox = host.seatX + offsets[idx].x;
+                        const oy = host.seatY + offsets[idx].y;
+                        s.moveToPosition(ox, oy, () => { s.state = 'jigsaw'; });
+                    }
                 });
-
-                this.showInteractionEffect(nearest.x, nearest.y, tech.color);
-                this.showInteractionEffect(nearest.linkedTo.x, nearest.linkedTo.y, tech.color);
-                teacher.startCooldown('compare_contrast', tech.cooldown);
-                return;
+                this.jigsawGroups.push({
+                    students: group,
+                    hostX: host.seatX,
+                    hostY: host.seatY,
+                    timer: tech.groupDuration,
+                });
+                this.showInteractionEffect(host.x, host.y, tech.color);
+                teacher.startCooldown(techId, tech.cooldown);
+                break;
             }
-        }
+            case 'group_work': {
+                // Same as jigsaw but with 6 students
+                const gwHost = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (!gwHost) break;
+                const gwOthers = this.students.filter(s => s.state === 'seated' && s !== gwHost);
+                if (gwOthers.length < tech.groupSize - 1) break;
 
-        // Guided Practice (send to station)
-        if (cfg.hasStations && cfg.techniques.includes('guided_practice') && teacher.canUseTechnique('guided_practice')) {
-            const nearest = this.getNearestStudent(teacher.x, teacher.y, 60, 'seated');
-            if (nearest) {
-                // Find nearest station
-                let bestStation = null;
-                let bestDist = Infinity;
-                this.stations.forEach(s => {
-                    const d = Phaser.Math.Distance.Between(nearest.x, nearest.y, s.x, s.y);
-                    if (d < bestDist) { bestDist = d; bestStation = s; }
+                gwOthers.sort((a, b) =>
+                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, a.x, a.y) -
+                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, b.x, b.y)
+                );
+                const gwGroup = [gwHost, ...gwOthers.slice(0, tech.groupSize - 1)];
+
+                const gwOffsets = [
+                    { x: -16, y: -14 }, { x: 16, y: -14 },
+                    { x: -20, y: 0 },   { x: 20, y: 0 },
+                    { x: -16, y: 14 },  { x: 16, y: 14 },
+                ];
+
+                gwGroup.forEach((s, idx) => {
+                    s.state = 'jigsaw';
+                    if (s !== gwHost) {
+                        const ox = gwHost.seatX + gwOffsets[idx].x;
+                        const oy = gwHost.seatY + gwOffsets[idx].y;
+                        s.moveToPosition(ox, oy, () => { s.state = 'jigsaw'; });
+                    }
                 });
-
-                if (bestStation) {
-                    const tech = BloomGame.Techniques.guided_practice;
+                this.jigsawGroups.push({
+                    students: gwGroup,
+                    hostX: gwHost.seatX,
+                    hostY: gwHost.seatY,
+                    timer: tech.groupDuration,
+                });
+                this.showInteractionEffect(gwHost.x, gwHost.y, tech.color);
+                teacher.startCooldown(techId, tech.cooldown);
+                break;
+            }
+            case 'compare_contrast': {
+                if (!cfg.hasLinks) return;
+                const nearest = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (nearest && nearest.linkedTo) {
                     nearest.boostAttention(tech.attentionBoost);
-                    bestStation.occupied++;
-                    nearest.moveToPosition(bestStation.x + (Math.random() - 0.5) * 20, bestStation.y, () => {
-                        nearest.state = 'at_station';
-                        nearest.stateTimer = 8000;
+                    nearest.linkedTo.boostAttention(tech.attentionBoost);
+                    nearest.linkPositive = true;
+                    nearest.linkedTo.linkPositive = true;
+                    const link = this.links.find(l =>
+                        (l.a === nearest && l.b === nearest.linkedTo) ||
+                        (l.b === nearest && l.a === nearest.linkedTo)
+                    );
+                    if (link) link.positive = true;
+                    this.time.delayedCall(12000, () => {
+                        nearest.linkPositive = false;
+                        nearest.linkedTo.linkPositive = false;
+                        if (link) link.positive = false;
                     });
-                    // Return and free station
-                    this.time.delayedCall(9000, () => {
-                        bestStation.occupied = Math.max(0, bestStation.occupied - 1);
-                    });
-                    teacher.startCooldown('guided_practice', tech.cooldown);
+                    this.showInteractionEffect(nearest.x, nearest.y, tech.color);
+                    this.showInteractionEffect(nearest.linkedTo.x, nearest.linkedTo.y, tech.color);
+                    teacher.startCooldown(techId, tech.cooldown);
                 }
-                return;
+                break;
             }
-        }
-    }
-
-    handleOnePress() {
-        const cfg = this.levelConfig;
-        const teacher = this.teacher;
-
-        // Quick Answer to question
-        if (cfg.hasQuestions && cfg.techniques.includes('quick_answer')) {
-            const questioning = this.students.find(s => s.hasQuestion && Phaser.Math.Distance.Between(teacher.x, teacher.y, s.x, s.y) < 60);
-            if (questioning) {
-                const tech = BloomGame.Techniques.quick_answer;
-                questioning.hideQuestion();
-                questioning.boostAttention(tech.attentionBoost);
-                this.showInteractionEffect(questioning.x, questioning.y, tech.color);
-                return;
-            }
-        }
-
-        // Zone 1 direction for color zones
-        if (cfg.hasColorZones && cfg.techniques.includes('group_project') && teacher.canUseTechnique('group_project')) {
-            this.sendToZone(0);
-        }
-    }
-
-    handleTwoPress() {
-        const cfg = this.levelConfig;
-        const teacher = this.teacher;
-
-        // Socratic Question
-        if (cfg.hasQuestions && cfg.techniques.includes('socratic_question') && teacher.canUseTechnique('socratic_question')) {
-            const questioning = this.students.find(s => s.hasQuestion && Phaser.Math.Distance.Between(teacher.x, teacher.y, s.x, s.y) < 60);
-            if (questioning) {
-                const tech = BloomGame.Techniques.socratic_question;
-                teacher.showAura(40, tech.color);
-                teacher.startChannel(tech.channelTime, () => {
+            case 'quick_answer': {
+                if (!cfg.hasQuestions) return;
+                const questioning = this.students.find(s => s.hasQuestion && Phaser.Math.Distance.Between(teacher.x, teacher.y, s.x, s.y) < tech.range);
+                if (questioning) {
                     questioning.hideQuestion();
                     questioning.boostAttention(tech.attentionBoost);
-                    // AoE boost to neighbors
-                    this.getStudentsInRange(questioning.x, questioning.y, 100, 'seated').forEach(s => {
-                        if (s !== questioning) s.boostAttention(10);
-                    });
                     this.showInteractionEffect(questioning.x, questioning.y, tech.color);
-                });
-                teacher.startCooldown('socratic_question', tech.cooldown);
-                return;
+                }
+                break;
+            }
+            case 'socratic_question': {
+                if (!cfg.hasQuestions) return;
+                const questioning = this.students.find(s => s.hasQuestion && Phaser.Math.Distance.Between(teacher.x, teacher.y, s.x, s.y) < tech.range);
+                if (questioning) {
+                    teacher.showAura(40, tech.color);
+                    teacher.startChannel(tech.channelTime, () => {
+                        questioning.hideQuestion();
+                        questioning.boostAttention(tech.attentionBoost);
+                        this.getStudentsInRange(questioning.x, questioning.y, 100, 'seated').forEach(s => {
+                            if (s !== questioning) s.boostAttention(10);
+                        });
+                        this.showInteractionEffect(questioning.x, questioning.y, tech.color);
+                    });
+                    teacher.startCooldown(techId, tech.cooldown);
+                }
+                break;
+            }
+            case 'group_project': {
+                if (!cfg.hasProjectBoard) return;
+                const nearest = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (nearest) {
+                    let tx = this.projectBoardX + (Math.random() - 0.5) * 100;
+                    let ty = this.projectBoardY + 35;
+                    if (cfg.hasColorZones) {
+                        const zone = nearest.zoneAffinity;
+                        tx = this.projectBoardX - 90 + zone * 90;
+                    }
+                    nearest.moveToPosition(tx, ty, () => {
+                        nearest.state = 'at_project';
+                        nearest.stateTimer = 10000;
+                        this.projectStudents.push(nearest);
+                        nearest.boostAttention(tech.attentionBoost);
+                        this.checkSynthesisEvent();
+                    });
+                    teacher.startCooldown(techId, tech.cooldown);
+                }
+                break;
+            }
+            case 'peer_teach': {
+                if (!cfg.hasPodium || this.presenterActive) return;
+                const nearest = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (nearest && nearest.attention > 40) {
+                    nearest.moveToPosition(this.podiumX, this.podiumY - 20, () => {
+                        nearest.state = 'presenting';
+                        nearest.stateTimer = 8000;
+                        this.presenterActive = nearest;
+                    });
+                    teacher.startCooldown(techId, tech.cooldown);
+                }
+                break;
             }
         }
-
-        // Zone 2 direction
-        if (cfg.hasColorZones && cfg.techniques.includes('group_project') && teacher.canUseTechnique('group_project')) {
-            this.sendToZone(1);
-        }
-    }
-
-    handleThreePress() {
-        const cfg = this.levelConfig;
-
-        // Zone 3 direction
-        if (cfg.hasColorZones && cfg.techniques.includes('group_project') && this.teacher.canUseTechnique('group_project')) {
-            this.sendToZone(2);
-        }
-    }
-
-    sendToZone(zoneIndex) {
-        const teacher = this.teacher;
-        const nearest = this.getNearestStudent(teacher.x, teacher.y, 60, 'seated');
-        if (!nearest) return;
-
-        const tx = this.projectBoardX - 90 + zoneIndex * 90;
-        const ty = this.projectBoardY + 35;
-        const isMatch = nearest.zoneAffinity === zoneIndex;
-
-        nearest.moveToPosition(tx, ty, () => {
-            nearest.state = 'at_project';
-            nearest.stateTimer = 10000;
-            this.projectStudents.push(nearest);
-            const boost = isMatch ? 25 : 12;
-            nearest.boostAttention(boost);
-            if (isMatch) {
-                this.showInteractionEffect(nearest.x, nearest.y, 0xE9C46A);
-            }
-            this.checkSynthesisEvent();
-        });
-        teacher.startCooldown('group_project', BloomGame.Techniques.group_project.cooldown);
     }
 
     // === HELPERS ===
@@ -678,7 +1150,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
         const student = eligible[Math.floor(Math.random() * eligible.length)];
         student.showQuestion();
-        student.questionTimer = 10000;
+        student.questionTimer = 5000;
     }
 
     checkSynthesisEvent() {
@@ -725,8 +1197,34 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         // Update teacher
         this.teacher.update(delta, this.cursors, this.wasd);
 
+        // Coffee mug pickup, boost, & lifetimes
+        this.checkCoffeePickup();
+        this.updateCoffeeBoost(delta);
+        this.updateCoffeeMugLifetimes(delta);
+
+        // Air conditioner
+        this.updateAC(delta);
+
+        // ICT power-up
+        this.checkICTPickup();
+        this.updateICTPickupLifetimes(delta);
+        this.updateICT(delta);
+
         // Update students
         this.students.forEach(s => s.update(delta));
+
+        // Update jigsaw groups
+        for (let i = this.jigsawGroups.length - 1; i >= 0; i--) {
+            const group = this.jigsawGroups[i];
+            group.timer -= delta;
+            if (group.timer <= 0) {
+                // Send students back to seats
+                group.students.forEach(s => {
+                    if (s.state === 'jigsaw') s.returnToSeat();
+                });
+                this.jigsawGroups.splice(i, 1);
+            }
+        }
 
         // Handle presenter
         if (this.presenterActive) {
@@ -757,10 +1255,8 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
         // Input
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this.handleSpacePress();
-        if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.handleEPress();
-        if (Phaser.Input.Keyboard.JustDown(this.oneKey)) this.handleOnePress();
-        if (Phaser.Input.Keyboard.JustDown(this.twoKey)) this.handleTwoPress();
-        if (Phaser.Input.Keyboard.JustDown(this.threeKey)) this.handleThreePress();
+        if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.handleTechniquePress('E');
+        if (Phaser.Input.Keyboard.JustDown(this.qKey)) this.handleTechniquePress('Q');
 
         // Timer
         this.gameTime -= delta / 1000;
@@ -800,12 +1296,30 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         this.avgText.setText(`Class Attention: ${avg}%`);
         this.avgText.setColor(avgColor);
 
-        // Update technique bar colors based on cooldowns
+        // Update technique bar colors and cooldown progress bars
+        const W = BloomGame.DIMENSIONS.WIDTH;
+        const H = BloomGame.DIMENSIONS.HEIGHT;
         const cfg = this.levelConfig;
+        const barY = H - 52;
+        this.techCooldownBar.clear();
+
         cfg.techniques.forEach((techId, i) => {
             if (i >= this.techTexts.length) return;
-            const onCooldown = this.teacher.cooldowns[techId];
-            this.techTexts[i].setColor(onCooldown ? '#666666' : '#F5F0E8');
+            const cooldownPct = this.teacher.getCooldownPercent(techId);
+            this.techTexts[i].setColor(cooldownPct > 0 ? '#666666' : '#F5F0E8');
+
+            if (cooldownPct > 0) {
+                const tx = this.techTexts[i].x;
+                const barWidth = this.techTexts[i].width;
+                const filled = barWidth * (1 - cooldownPct);
+                // Background
+                this.techCooldownBar.fillStyle(0x000000, 0.4);
+                this.techCooldownBar.fillRoundedRect(tx, barY + 20, barWidth, 4, 2);
+                // Fill (recharging)
+                const tech = BloomGame.Techniques[techId];
+                this.techCooldownBar.fillStyle(tech ? tech.color : 0x2A9D8F, 0.8);
+                this.techCooldownBar.fillRoundedRect(tx, barY + 20, filled, 4, 2);
+            }
         });
 
         if (this.synthesisText) {
@@ -813,6 +1327,49 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         }
         if (this.presentText) {
             this.presentText.setText(`Presentations: ${this.presentCount}/${this.levelConfig.presentGoal || 3}`);
+        }
+
+        // Powerup decay bar
+        const decayBarW = 120;
+        const decayBarH = 6;
+        const decayBarX = W / 2 - decayBarW / 2;
+        const decayBarY = H - 60;
+
+        this.powerupDecayBar.clear();
+        this.powerupDecayLabel.setVisible(false);
+
+        if (this.coffeeBoosted) {
+            const pct = this.coffeeTimer / this.coffeeMaxDuration;
+            this.powerupDecayBar.fillStyle(0x000000, 0.5);
+            this.powerupDecayBar.fillRoundedRect(decayBarX, decayBarY, decayBarW, decayBarH, 3);
+            this.powerupDecayBar.fillStyle(0xE9C46A, 0.9);
+            this.powerupDecayBar.fillRoundedRect(decayBarX, decayBarY, decayBarW * pct, decayBarH, 3);
+            this.powerupDecayLabel.setText('Coffee Boost');
+            this.powerupDecayLabel.setColor('#E9C46A');
+            this.powerupDecayLabel.setVisible(true);
+        } else if (this.acActive) {
+            const pct = this.acTimer / this.acMaxDuration;
+            this.powerupDecayBar.fillStyle(0x000000, 0.5);
+            this.powerupDecayBar.fillRoundedRect(decayBarX, decayBarY, decayBarW, decayBarH, 3);
+            this.powerupDecayBar.fillStyle(0x2A9D8F, 0.9);
+            this.powerupDecayBar.fillRoundedRect(decayBarX, decayBarY, decayBarW * pct, decayBarH, 3);
+            this.powerupDecayLabel.setText('A/C Active');
+            this.powerupDecayLabel.setColor('#2A9D8F');
+            this.powerupDecayLabel.setVisible(true);
+        }
+
+        // Update tech bar text based on context
+        const acDist = Phaser.Math.Distance.Between(this.teacher.x, this.teacher.y, this.acX, this.acY);
+        if (this.techTexts.length > 0) {
+            if (acDist < 50 && !this.acActive) {
+                this.techTexts[0].setText('[SPACE] Turn on AC');
+            } else if (this.levelConfig.hasQuestions && this.students.some(s => s.hasQuestion && Phaser.Math.Distance.Between(this.teacher.x, this.teacher.y, s.x, s.y) < 60)) {
+                this.techTexts[0].setText('[SPACE] Socratic Dialog');
+            } else {
+                const techId = this.levelConfig.techniques[0];
+                const tech = BloomGame.Techniques[techId];
+                if (tech) this.techTexts[0].setText(`[${tech.key}] ${tech.name}`);
+            }
         }
     }
 
@@ -838,7 +1395,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
     winLevel() {
         this.gameRunning = false;
-        this.showAnnouncement('Level Complete!', 'Well done, Mr. Thompson.', 2000);
+        this.showAnnouncement('Level Complete!', 'Well done, Mr. Carbis.', 2000);
 
         this.time.delayedCall(2500, () => {
             this.cameras.main.fadeOut(500, 0, 0, 0);

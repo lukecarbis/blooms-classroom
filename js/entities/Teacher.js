@@ -6,6 +6,8 @@ BloomGame.Teacher = class Teacher extends Phaser.GameObjects.Container {
         scene.add.existing(this);
 
         this.speed = 160;
+        this.speedMultiplier = 1;
+        this.cooldownMultiplier = 1;
         this.isChannelling = false;
         this.channelProgress = 0;
         this.channelDuration = 0;
@@ -29,9 +31,9 @@ BloomGame.Teacher = class Teacher extends Phaser.GameObjects.Container {
         this.add(this.aura);
 
         // Name label
-        this.label = scene.add.text(0, 22, 'Mr. T', {
+        this.label = scene.add.text(0, 22, 'Mr. C', {
             fontSize: '9px',
-            fontFamily: 'monospace',
+            fontFamily: '"Press Start 2P", monospace',
             color: '#264653',
             backgroundColor: '#E9C46Acc',
             padding: { x: 3, y: 1 },
@@ -114,9 +116,9 @@ BloomGame.Teacher = class Teacher extends Phaser.GameObjects.Container {
     }
 
     update(delta, cursors, wasd) {
-        // Update cooldowns
+        // Update cooldowns (cooldownMultiplier speeds up recharge)
         for (const key in this.cooldowns) {
-            this.cooldowns[key] -= delta;
+            this.cooldowns[key] -= delta * this.cooldownMultiplier;
             if (this.cooldowns[key] <= 0) {
                 delete this.cooldowns[key];
             }
@@ -145,7 +147,8 @@ BloomGame.Teacher = class Teacher extends Phaser.GameObjects.Container {
 
         if (vx !== 0 || vy !== 0) {
             const len = Math.sqrt(vx * vx + vy * vy);
-            this.body.setVelocity((vx / len) * this.speed, (vy / len) * this.speed);
+            const spd = this.speed * this.speedMultiplier;
+            this.body.setVelocity((vx / len) * spd, (vy / len) * spd);
             if (Math.abs(vx) > Math.abs(vy)) {
                 this.facing = vx > 0 ? 'right' : 'left';
             } else {
