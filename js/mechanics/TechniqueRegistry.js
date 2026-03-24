@@ -62,7 +62,7 @@ BloomGame.Techniques = {
     group_work: {
         id: 'group_work',
         name: 'Group Work',
-        bloomLevel: 'Synthesize',
+        bloomLevel: 'Evaluate',
         description: 'Group nearby students to collaborate at a desk',
         type: 'group',
         key: 'Q',
@@ -73,6 +73,21 @@ BloomGame.Techniques = {
         groupDuration: 15000,
         icon: 'puzzle',
         color: 0x9B59B6,
+    },
+    presentation: {
+        id: 'presentation',
+        name: 'Presentation',
+        bloomLevel: 'Create',
+        description: 'Send a student to present at the front of the room',
+        type: 'present',
+        key: 'Q',
+        range: 60,
+        cooldown: 0,
+        channelTime: 0,
+        attentionBoost: 100,
+        presentDuration: 6000,
+        icon: 'podium',
+        color: 0xE9C46A,
     },
     compare_contrast: {
         id: 'compare_contrast',
@@ -119,7 +134,7 @@ BloomGame.Techniques = {
     group_project: {
         id: 'group_project',
         name: 'Group Project',
-        bloomLevel: 'Synthesize',
+        bloomLevel: 'Evaluate',
         description: 'Send student to the project board',
         type: 'project',
         key: '6',
@@ -133,7 +148,7 @@ BloomGame.Techniques = {
     peer_teach: {
         id: 'peer_teach',
         name: 'Peer Teaching',
-        bloomLevel: 'Evaluate',
+        bloomLevel: 'Create',
         description: 'Invite student to present',
         type: 'present',
         key: '7',

@@ -9,7 +9,7 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
         this.seatY = y;
         this.studentType = config.type || 'normal';
         this.studentColor = config.color || 0xFFB3BA;
-        this.attention = 70 + Math.random() * 30; // Start 70-100
+        this.attention = 100; // Start at full attention
         this.maxAttention = 100;
         this.decayRate = config.decayRate || 4;
         this.linkedTo = null;
@@ -27,11 +27,9 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
         switch (this.studentType) {
             case 'eager':
                 this.decayRate *= 0.7;
-                this.attention = 90 + Math.random() * 10;
                 break;
             case 'distracted':
                 this.decayRate *= 1.4;
-                this.attention = 50 + Math.random() * 30;
                 break;
             case 'social':
                 this.decayRate *= 1.0;
@@ -215,33 +213,34 @@ BloomGame.Student = class Student extends Phaser.GameObjects.Container {
             }
         } else if (this.state === 'presenting') {
             this.stateTimer -= delta;
-            // Presenter's own attention drains faster
-            this.attention -= this.decayRate * 2 * (delta / 1000);
-            if (this.stateTimer <= 0 || this.attention <= 10) {
+            // Presenter has no decay while presenting
+            if (this.stateTimer <= 0) {
+                this.hasPresented = true;
                 this.returnToSeat();
-                this.state = 'walking'; // will become seated on arrival
             }
         } else if (this.state === 'seated') {
-            // Normal attention decay
-            let rate = this.decayRate;
+            // Skip decay if in an active presentation column
+            if (!this.inPresentationColumn) {
+                let rate = this.decayRate;
 
-            // Link influence
-            if (this.linkedTo && !this.linkPositive) {
-                const partner = this.linkedTo;
-                if (partner.attention < 40) {
-                    rate *= 1.3;
+                // Link influence
+                if (this.linkedTo && !this.linkPositive) {
+                    const partner = this.linkedTo;
+                    if (partner.attention < 40) {
+                        rate *= 1.3;
+                    }
                 }
-            }
-            if (this.linkedTo && this.linkPositive) {
-                rate *= 0.7;
-            }
+                if (this.linkedTo && this.linkPositive) {
+                    rate *= 0.7;
+                }
 
-            // AC slows decay by 20%
-            if (this.scene.acActive) {
-                rate *= 0.8;
-            }
+                // AC slows decay by 20%
+                if (this.scene.acActive) {
+                    rate *= 0.8;
+                }
 
-            this.attention = Math.max(0, this.attention - rate * (delta / 1000));
+                this.attention = Math.max(0, this.attention - rate * (delta / 1000));
+            }
         }
 
         this.drawAttentionBar();

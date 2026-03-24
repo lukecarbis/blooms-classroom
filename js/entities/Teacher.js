@@ -31,7 +31,7 @@ BloomGame.Teacher = class Teacher extends Phaser.GameObjects.Container {
         this.add(this.aura);
 
         // Name label
-        this.label = scene.add.text(0, 22, 'Mr. C', {
+        this.label = scene.add.text(0, 22, 'Mr. B', {
             fontSize: '9px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#264653',

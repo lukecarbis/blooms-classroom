@@ -35,6 +35,8 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         this.links = [];
         this.projectStudents = [];
         this.presenterActive = null;
+        this.presenterColumn = null;
+        this.columnGlowGraphics = [];
         this.deskPositions = [];
         this.jigsawGroups = []; // { students: [], hostX, hostY, timer }
 
@@ -50,8 +52,8 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         if (cfg.hasProjectBoard) this.createProjectBoard();
         if (cfg.hasPodium) this.createPodium();
 
-        // Create teacher
-        this.teacher = new BloomGame.Teacher(this, W / 2, H - 120);
+        // Create teacher (starts at front of room near whiteboard)
+        this.teacher = new BloomGame.Teacher(this, W / 2, 100);
         this.teacher.body.setCollideWorldBounds(true);
         this.physics.world.setBounds(50, 60, W - 100, H - 100);
 
@@ -397,7 +399,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         // Powerup decay bar (shared between coffee and AC)
         const H = BloomGame.DIMENSIONS.HEIGHT;
         this.powerupDecayBar = this.add.graphics().setDepth(51);
-        this.powerupDecayLabel = this.add.text(W / 2, H - 66, '', {
+        this.powerupDecayLabel = this.add.text(W / 2, H - 70, '', {
             fontSize: '8px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#E9C46A',
@@ -831,6 +833,19 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
             }
         }
 
+        // Praise: if near a student who has presented, give +60
+        // But if they also have a question, Socratic Dialog takes priority
+        if (cfg.techniques.includes('presentation')) {
+            const praised = this.students.find(s => s.hasPresented && s.state === 'seated' &&
+                Phaser.Math.Distance.Between(teacher.x, teacher.y, s.x, s.y) < 60);
+            if (praised && !praised.hasQuestion) {
+                praised.boostAttention(60);
+                praised.hasPresented = false; // can only praise once
+                this.showInteractionEffect(praised.x, praised.y, 0x2A9D8F);
+                return;
+            }
+        }
+
         // Single-target Recall Prompt (also affects jigsaw groups)
         if (cfg.techniques.includes('recall_prompt') && teacher.canUseTechnique('recall_prompt')) {
             const tech = BloomGame.Techniques.recall_prompt;
@@ -842,7 +857,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                     questioning.hideQuestion();
                     questioning.boostAttention(100);
                     // Boost all surrounding seated students +10
-                    this.getStudentsInRange(questioning.x, questioning.y, 200, 'seated').forEach(s => {
+                    this.getStudentsInRange(questioning.x, questioning.y, 250, 'seated').forEach(s => {
                         if (s !== questioning) {
                             s.boostAttention(10);
                             this.showInteractionEffect(s.x, s.y, 0x9B59B6);
@@ -989,7 +1004,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                 // Find all seated students at surrounding tables (N, NE, E, SE, S, SW, W, NW)
                 const gwNearby = this.students.filter(s =>
                     s.state === 'seated' && s !== gwHost &&
-                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, s.x, s.y) < 200
+                    Phaser.Math.Distance.Between(gwHost.x, gwHost.y, s.x, s.y) < 250
                 );
                 if (gwNearby.length === 0) break;
                 const gwGroup = [gwHost, ...gwNearby];
@@ -1100,6 +1115,29 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                 }
                 break;
             }
+            case 'presentation': {
+                // Only one presenter at a time, no cooldown
+                if (this.presenterActive) return;
+                const nearest = this.getNearestStudent(teacher.x, teacher.y, tech.range, 'seated');
+                if (!nearest) break;
+                // Find which column this student is in
+                const presCol = this.getStudentColumn(nearest);
+                // Move student to front of room (same x, near whiteboard)
+                const frontY = 95;
+                nearest.boostAttention(tech.attentionBoost); // +100
+                nearest.moveToPosition(nearest.seatX, frontY, () => {
+                    nearest.state = 'presenting';
+                    nearest.stateTimer = tech.presentDuration; // 10 seconds
+                    this.presenterActive = nearest;
+                    this.presenterColumn = presCol;
+                    // Flag column students so their decay is paused
+                    presCol.forEach(s => { if (s !== nearest) s.inPresentationColumn = true; });
+                    // Start column highlight animation
+                    this.startColumnAnimation(presCol);
+                });
+                this.showInteractionEffect(nearest.x, nearest.y, tech.color);
+                break;
+            }
         }
     }
 
@@ -1121,6 +1159,72 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
             if (d < bestDist) { bestDist = d; best = s; }
         });
         return best;
+    }
+
+    getStudentColumn(student) {
+        // Find all students that share approximately the same x position (same column)
+        const tolerance = 20;
+        return this.students.filter(s => Math.abs(s.seatX - student.seatX) < tolerance);
+    }
+
+    startColumnAnimation(columnStudents) {
+        // Pulsing glow on column students while presenter is active
+        this.columnGlowGraphics = this.columnGlowGraphics || [];
+        // Clean up any old ones
+        this.columnGlowGraphics.forEach(g => g.destroy());
+        this.columnGlowGraphics = [];
+
+        // Draw a vertical highlight beam behind the column
+        const minY = 95;
+        const maxY = Math.max(...columnStudents.map(s => s.seatY)) + 20;
+        const colX = columnStudents[0].seatX;
+        const beam = this.add.graphics().setDepth(1);
+        beam.fillStyle(0x2A9D8F, 0.12);
+        beam.fillRect(colX - 24, minY, 48, maxY - minY);
+        this.columnGlowGraphics.push(beam);
+        this.tweens.add({
+            targets: beam,
+            alpha: { from: 0.3, to: 0.08 },
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+        });
+
+        // Individual student glow rings
+        columnStudents.forEach(s => {
+            if (s === this.presenterActive) return;
+            const glow = this.add.graphics().setDepth(15);
+            // Bright ring around student
+            glow.lineStyle(3, 0x2A9D8F, 0.8);
+            glow.strokeCircle(0, 0, 18);
+            glow.fillStyle(0x2A9D8F, 0.15);
+            glow.fillCircle(0, 0, 18);
+            glow.setPosition(s.seatX, s.seatY - 4);
+            this.columnGlowGraphics.push(glow);
+            this.tweens.add({
+                targets: glow,
+                alpha: { from: 0.9, to: 0.3 },
+                scaleX: { from: 1, to: 1.2 },
+                scaleY: { from: 1, to: 1.2 },
+                duration: 700,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+            });
+        });
+    }
+
+    stopColumnAnimation() {
+        if (this.columnGlowGraphics) {
+            this.columnGlowGraphics.forEach(g => g.destroy());
+            this.columnGlowGraphics = [];
+        }
+        // Clear decay-pause flag on column students
+        if (this.presenterColumn) {
+            this.presenterColumn.forEach(s => { s.inPresentationColumn = false; });
+        }
+        this.presenterColumn = null;
     }
 
     showInteractionEffect(x, y, color) {
@@ -1179,7 +1283,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
             } else {
                 g.fillStyle(0x888888, 0.3);
             }
-            g.fillStar(this.projectBoardX - 30 + i * 20, this.projectBoardY + 48, 5, 8, 4, 5);
+            g.fillCircle(this.projectBoardX - 30 + i * 20, this.projectBoardY + 48, 6);
         }
     }
 
@@ -1227,12 +1331,13 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
             if (this.presenterActive.state !== 'presenting') {
                 // Presentation ended
                 this.presentCount++;
+                this.stopColumnAnimation();
                 this.presenterActive = null;
-            } else {
-                // Presenter radiates attention
-                this.students.forEach(s => {
+            } else if (this.presenterColumn) {
+                // Column students get attention boost at 3.5/sec
+                this.presenterColumn.forEach(s => {
                     if (s !== this.presenterActive && s.state === 'seated') {
-                        s.attention = Math.min(s.maxAttention, s.attention + 3 * (delta / 1000));
+                        s.attention = Math.min(s.maxAttention, s.attention + 5 * (delta / 1000));
                     }
                 });
             }
@@ -1329,7 +1434,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
         const decayBarW = 120;
         const decayBarH = 6;
         const decayBarX = W / 2 - decayBarW / 2;
-        const decayBarY = H - 60;
+        const decayBarY = H - 64;
 
         this.powerupDecayBar.clear();
         this.powerupDecayLabel.setVisible(false);
@@ -1361,6 +1466,8 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
                 this.techTexts[0].setText('[SPACE] Turn on AC');
             } else if (this.levelConfig.hasQuestions && this.students.some(s => s.hasQuestion && Phaser.Math.Distance.Between(this.teacher.x, this.teacher.y, s.x, s.y) < 60)) {
                 this.techTexts[0].setText('[SPACE] Socratic Dialog');
+            } else if (this.levelConfig.techniques.includes('presentation') && this.students.some(s => s.hasPresented && !s.hasQuestion && s.state === 'seated' && Phaser.Math.Distance.Between(this.teacher.x, this.teacher.y, s.x, s.y) < 60)) {
+                this.techTexts[0].setText('[SPACE] Praise');
             } else {
                 const techId = this.levelConfig.techniques[0];
                 const tech = BloomGame.Techniques[techId];
@@ -1391,7 +1498,15 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
     winLevel() {
         this.gameRunning = false;
-        this.showAnnouncement('Level Complete!', 'Well done, Mr. Carbis.', 2000);
+        this.teacher.body.setVelocity(0, 0);
+        this.showAnnouncement('Level Complete!', 'Well done, Mr. Bloom.', 2000);
+
+        // Save progress — unlock next level
+        const nextLevel = this.levelIndex + 1;
+        const saved = parseInt(localStorage.getItem('bloomsMaxLevel') || '0', 10);
+        if (nextLevel > saved) {
+            localStorage.setItem('bloomsMaxLevel', String(nextLevel));
+        }
 
         this.time.delayedCall(2500, () => {
             this.cameras.main.fadeOut(500, 0, 0, 0);
@@ -1438,6 +1553,7 @@ BloomGame.ClassroomScene = class ClassroomScene extends Phaser.Scene {
 
     failLevel(reason) {
         this.gameRunning = false;
+        this.teacher.body.setVelocity(0, 0);
         this.scene.start('GameOver', {
             reason: reason,
             levelIndex: this.levelIndex,

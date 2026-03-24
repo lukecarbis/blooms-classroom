@@ -39,7 +39,7 @@ BloomGame.VictoryScene = class VictoryScene extends Phaser.Scene {
         }).setOrigin(0.5).setAlpha(0);
 
         // Bloom's pyramid
-        const levels = ['Remember', 'Understand', 'Apply', 'Analyze', 'Synthesize', 'Evaluate'];
+        const levels = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'];
         const colors = [0x2A9D8F, 0x27AE60, 0xE9C46A, 0xE76F51, 0x9B59B6, 0xE63946];
 
         levels.forEach((level, i) => {
@@ -88,7 +88,7 @@ BloomGame.VictoryScene = class VictoryScene extends Phaser.Scene {
         });
 
         // Completion text
-        const complete = this.add.text(W / 2, 510, 'You guided Mr. Carbis through all six levels of Bloom\'s Taxonomy.\nThe journey of a teacher never truly ends.', {
+        const complete = this.add.text(W / 2, 510, 'You guided Mr. Bloom through all six levels of Bloom\'s Taxonomy.\nThe journey of a teacher never truly ends.', {
             fontSize: '13px',
             fontFamily: 'Georgia, serif',
             color: '#888888',

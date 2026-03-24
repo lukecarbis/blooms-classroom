@@ -182,7 +182,7 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
         const px = 160, py = 260;
         this.portrait.clear();
 
-        // Only show for speaker lines with Mr. Carbis
+        // Only show for speaker lines with Mr. Bloom
         // Drawn each time a line changes
     }
 
@@ -193,7 +193,7 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
         const px = 90, py = 160;
         const g = this.portrait;
 
-        if (speaker === 'Mr. Carbis') {
+        if (speaker === 'Mr. Bloom') {
             // Simple portrait
             g.fillStyle(0x264653, 0.6);
             g.fillCircle(px, py, 30);
@@ -205,7 +205,7 @@ BloomGame.NarrativeScene = class NarrativeScene extends Phaser.Scene {
             g.fillEllipse(px, py - 20, 18, 8);
             g.fillStyle(BloomGame.COLORS.ACCENT);
             g.fillTriangle(px - 2, py - 3, px + 2, py - 3, px, py + 8);
-        } else if (speaker === 'Mrs. Okafor') {
+        } else if (speaker === 'Mr. Puentedura') {
             g.fillStyle(0x264653, 0.6);
             g.fillCircle(px, py, 30);
             g.fillStyle(0x9B59B6);
